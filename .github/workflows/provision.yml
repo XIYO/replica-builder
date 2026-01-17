@@ -9,8 +9,6 @@ on:
         type: string
 
 env:
-  TEMPLATE_REPO: replica-template-00
-  FORKED_REPO_PREFIX: replica-template-00
   GITHUB_OWNER: xiyo
 
 jobs:
@@ -21,10 +19,16 @@ jobs:
         id: config
         run: |
           echo '${{ inputs.config }}' > config.json
+          # template 값 추출 (기본값: template-00)
+          TEMPLATE=$(jq -r '.template // "template-00"' config.json)
+          # template-XX -> replica-template-XX 형식으로 변환
+          TEMPLATE_REPO="replica-${TEMPLATE}"
           {
             echo "subdomain=$(jq -r '.subdomain' config.json)"
             echo "title=$(jq -r '.title' config.json)"
             echo "topic=$(jq -r '.topic' config.json)"
+            echo "template=${TEMPLATE}"
+            echo "templateRepo=${TEMPLATE_REPO}"
             echo "accentColor=$(jq -r '.accentColor // "#3b82f6"' config.json)"
             echo "description=$(jq -r '.description // ""' config.json)"
             echo "locale=$(jq -r '.locale // "ko"' config.json)"
@@ -40,10 +44,11 @@ jobs:
           script: |
             const now = new Date();
             const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
-            const newRepoName = `${{ env.FORKED_REPO_PREFIX }}-${timestamp}`;
+            const templateRepo = '${{ steps.config.outputs.templateRepo }}';
+            const newRepoName = `${templateRepo}-${timestamp}`;
             const { data: repo } = await github.rest.repos.createUsingTemplate({
               template_owner: 'xiyo',
-              template_repo: '${{ env.TEMPLATE_REPO }}',
+              template_repo: templateRepo,
               owner: '${{ env.GITHUB_OWNER }}',
               name: newRepoName,
               include_all_branches: false,
@@ -107,7 +112,9 @@ jobs:
             site/site.config.json > site/site.config.json.tmp
           mv site/site.config.json.tmp site/site.config.json
 
-      - name: Create custom CSS with accent color
+      # Starlight (template-00) 전용 단계들
+      - name: Create custom CSS with accent color (Starlight)
+        if: steps.config.outputs.template == 'template-00'
         run: |
           mkdir -p site/src/styles
           cat > site/src/styles/custom.css << EOF
@@ -118,16 +125,19 @@ jobs:
           }
           EOF
 
-      - name: Setup Deno
+      - name: Setup Deno (Starlight)
+        if: steps.config.outputs.template == 'template-00'
         uses: denoland/setup-deno@v2
 
-      - name: Remove default content
+      - name: Remove default content (Starlight)
+        if: steps.config.outputs.template == 'template-00'
         run: |
           rm -rf site/src/content/docs/guides
           rm -rf site/src/content/docs/reference
           rm -f site/src/content/docs/index.mdx
 
-      - name: Generate initial content with AI
+      - name: Generate initial content with AI (Starlight)
+        if: steps.config.outputs.template == 'template-00'
         working-directory: site
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -144,6 +154,7 @@ jobs:
           git commit -m "feat: initialize ${{ steps.config.outputs.title }} site
 
           Provisioned by Replica Builder
+          - Template: ${{ steps.config.outputs.template }}
           - Subdomain: ${{ steps.config.outputs.subdomain }}
           - Topic: ${{ steps.config.outputs.topic }}
           - Accent Color: ${{ steps.config.outputs.accentColor }}"

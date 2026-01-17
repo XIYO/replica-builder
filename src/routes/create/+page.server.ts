@@ -22,9 +22,6 @@ export const actions = {
 		// 모든 폼 데이터를 객체로 수집
 		const config: Record<string, string | boolean> = {};
 		for (const [key, value] of data.entries()) {
-			if (key === 'template') continue; // 템플릿 ID는 별도 처리
-
-			// boolean 값 처리
 			if (value === 'true') {
 				config[key] = true;
 			} else if (value === 'false') {
