@@ -1,6 +1,7 @@
 export interface WorkflowInputs {
 	subdomain: string;
 	title: string;
+	topic: string;
 	site_type: string;
 	accent_color: string;
 }

@@ -5,118 +5,118 @@
 
 // Types
 interface DocInfo {
-  slug: string;
-  title: string;
-  description: string;
+	slug: string;
+	title: string;
+	description: string;
 }
 
 interface Category {
-  name: string;
-  label: string;
-  docs: DocInfo[];
+	name: string;
+	label: string;
+	docs: DocInfo[];
 }
 
 interface SiteStructure {
-  topic: string;
-  categories: Category[];
-  index: {
-    title: string;
-    tagline: string;
-    description: string;
-  };
+	topic: string;
+	categories: Category[];
+	index: {
+		title: string;
+		tagline: string;
+		description: string;
+	};
 }
 
 interface DocContent {
-  frontmatter: {
-    title: string;
-    description: string;
-    template?: string;
-    hero?: {
-      tagline: string;
-      actions: { text: string; link: string; icon: string }[];
-    };
-  };
-  content: string;
+	frontmatter: {
+		title: string;
+		description: string;
+		template?: string;
+		hero?: {
+			tagline: string;
+			actions: { text: string; link: string; icon: string }[];
+		};
+	};
+	content: string;
 }
 
 interface GeneratedDoc {
-  path: string;
-  content: string;
+	path: string;
+	content: string;
 }
 
 // Gemini API call (always JSON mode)
 async function callGemini<T>(prompt: string): Promise<T> {
-  const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set");
+	const apiKey = Deno.env.get('GEMINI_API_KEY');
+	if (!apiKey) throw new Error('GEMINI_API_KEY not set');
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    }
-  );
+	const response = await fetch(
+		`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				contents: [{ parts: [{ text: prompt }] }],
+				generationConfig: { responseMimeType: 'application/json' }
+			})
+		}
+	);
 
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
+	if (!response.ok) {
+		throw new Error(`Gemini API error: ${response.status}`);
+	}
 
-  const data = await response.json();
+	const data = await response.json();
 
-  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    console.error("Unexpected API response:", JSON.stringify(data, null, 2));
-    throw new Error("Invalid API response structure");
-  }
+	if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+		console.error('Unexpected API response:', JSON.stringify(data, null, 2));
+		throw new Error('Invalid API response structure');
+	}
 
-  const text = data.candidates[0].content.parts[0].text;
+	const text = data.candidates[0].content.parts[0].text;
 
-  try {
-    const parsed = JSON.parse(text);
-    // Handle array response (Gemini sometimes returns [{...}] instead of {...})
-    return Array.isArray(parsed) ? parsed[0] : parsed;
-  } catch {
-    console.error("JSON parse error. Raw response:");
-    console.error(text.substring(0, 1000) + "...");
-    throw new Error("Failed to parse JSON response from Gemini");
-  }
+	try {
+		const parsed = JSON.parse(text);
+		// Handle array response (Gemini sometimes returns [{...}] instead of {...})
+		return Array.isArray(parsed) ? parsed[0] : parsed;
+	} catch {
+		console.error('JSON parse error. Raw response:');
+		console.error(text.substring(0, 1000) + '...');
+		throw new Error('Failed to parse JSON response from Gemini');
+	}
 }
 
 // Convert DocContent to markdown string
 function toMarkdown(doc: DocContent): string {
-  const lines: string[] = ["---"];
+	const lines: string[] = ['---'];
 
-  lines.push(`title: "${doc.frontmatter.title}"`);
-  lines.push(`description: "${doc.frontmatter.description}"`);
+	lines.push(`title: "${doc.frontmatter.title}"`);
+	lines.push(`description: "${doc.frontmatter.description}"`);
 
-  if (doc.frontmatter.template) {
-    lines.push(`template: ${doc.frontmatter.template}`);
-  }
+	if (doc.frontmatter.template) {
+		lines.push(`template: ${doc.frontmatter.template}`);
+	}
 
-  if (doc.frontmatter.hero) {
-    lines.push("hero:");
-    lines.push(`  tagline: "${doc.frontmatter.hero.tagline}"`);
-    lines.push("  actions:");
-    for (const action of doc.frontmatter.hero.actions) {
-      lines.push(`    - text: "${action.text}"`);
-      lines.push(`      link: ${action.link}`);
-      lines.push(`      icon: ${action.icon}`);
-    }
-  }
+	if (doc.frontmatter.hero) {
+		lines.push('hero:');
+		lines.push(`  tagline: "${doc.frontmatter.hero.tagline}"`);
+		lines.push('  actions:');
+		for (const action of doc.frontmatter.hero.actions) {
+			lines.push(`    - text: "${action.text}"`);
+			lines.push(`      link: ${action.link}`);
+			lines.push(`      icon: ${action.icon}`);
+		}
+	}
 
-  lines.push("---");
-  lines.push("");
-  lines.push(doc.content);
+	lines.push('---');
+	lines.push('');
+	lines.push(doc.content);
 
-  return lines.join("\n");
+	return lines.join('\n');
 }
 
 // Step 1: Generate site structure
 async function generateStructure(topic: string): Promise<SiteStructure> {
-  const prompt = `당신은 기술 문서 아키텍트입니다. 주어진 주제에 대한 문서 사이트 구조를 설계하세요.
+	const prompt = `당신은 기술 문서 아키텍트입니다. 주어진 주제에 대한 문서 사이트 구조를 설계하세요.
 
 주제: "${topic}"
 
@@ -150,30 +150,28 @@ async function generateStructure(topic: string): Promise<SiteStructure> {
 - 초보자부터 고급까지 단계적 구성
 - 실용적이고 구체적인 내용`;
 
-  const result = await callGemini<SiteStructure>(prompt);
+	const result = await callGemini<SiteStructure>(prompt);
 
-  // Validate structure
-  if (!result.categories || !Array.isArray(result.categories)) {
-    console.error("Invalid structure response:", JSON.stringify(result, null, 2));
-    throw new Error("Invalid structure: missing categories");
-  }
+	// Validate structure
+	if (!result.categories || !Array.isArray(result.categories)) {
+		console.error('Invalid structure response:', JSON.stringify(result, null, 2));
+		throw new Error('Invalid structure: missing categories');
+	}
 
-  return result;
+	return result;
 }
 
 // Step 2: Generate individual document
 async function generateDocument(
-  structure: SiteStructure,
-  category: Category,
-  doc: DocInfo
+	structure: SiteStructure,
+	category: Category,
+	doc: DocInfo
 ): Promise<GeneratedDoc> {
-  const otherDocs = structure.categories
-    .flatMap((c) =>
-      c.docs.map((d) => `- [${c.label}] ${d.title}: ${d.description}`)
-    )
-    .join("\n");
+	const otherDocs = structure.categories
+		.flatMap((c) => c.docs.map((d) => `- [${c.label}] ${d.title}: ${d.description}`))
+		.join('\n');
 
-  const prompt = `당신은 기술 문서 작성자입니다. 다음 문서를 작성하세요.
+	const prompt = `당신은 기술 문서 작성자입니다. 다음 문서를 작성하세요.
 
 ## 전체 사이트 구조
 주제: ${structure.topic}
@@ -208,24 +206,22 @@ ${otherDocs}
 - 큰따옴표는 \\"로 이스케이프
 - 백슬래시는 \\\\로 이스케이프`;
 
-  const result = await callGemini<DocContent>(prompt);
-  return {
-    path: `src/content/docs/${category.name}/${doc.slug}.md`,
-    content: toMarkdown(result),
-  };
+	const result = await callGemini<DocContent>(prompt);
+	return {
+		path: `src/content/docs/${category.name}/${doc.slug}.md`,
+		content: toMarkdown(result)
+	};
 }
 
 // Step 3: Generate index page
-async function generateIndexPage(
-  structure: SiteStructure
-): Promise<GeneratedDoc> {
-  const categorySummary = structure.categories
-    .map((c) => `- ${c.label}: ${c.docs.map((d) => d.title).join(", ")}`)
-    .join("\n");
+async function generateIndexPage(structure: SiteStructure): Promise<GeneratedDoc> {
+	const categorySummary = structure.categories
+		.map((c) => `- ${c.label}: ${c.docs.map((d) => d.title).join(', ')}`)
+		.join('\n');
 
-  const firstDoc = `/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}/`;
+	const firstDoc = `/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}/`;
 
-  const prompt = `당신은 기술 문서 작성자입니다. 문서 사이트의 메인 페이지를 작성하세요.
+	const prompt = `당신은 기술 문서 작성자입니다. 문서 사이트의 메인 페이지를 작성하세요.
 
 주제: ${structure.topic}
 제목: ${structure.index.title}
@@ -256,23 +252,20 @@ ${categorySummary}
 - 개행은 반드시 \\n으로 이스케이프
 - 큰따옴표는 \\"로 이스케이프`;
 
-  const result = await callGemini<DocContent>(prompt);
-  return {
-    path: "src/content/docs/index.mdx",
-    content: toMarkdown(result),
-  };
+	const result = await callGemini<DocContent>(prompt);
+	return {
+		path: 'src/content/docs/index.mdx',
+		content: toMarkdown(result)
+	};
 }
 
 // Step 4: Generate astro.config.mjs
 function generateAstroConfig(structure: SiteStructure): string {
-  const sidebarEntries = structure.categories
-    .map(
-      (c) =>
-        `				{ label: '${c.label}', autogenerate: { directory: '${c.name}' } },`
-    )
-    .join("\n");
+	const sidebarEntries = structure.categories
+		.map((c) => `				{ label: '${c.label}', autogenerate: { directory: '${c.name}' } },`)
+		.join('\n');
 
-  return `// @ts-check
+	return `// @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import cloudflare from '@astrojs/cloudflare';
@@ -307,62 +300,60 @@ ${sidebarEntries}
 
 // Write files
 async function writeFiles(docs: GeneratedDoc[], astroConfig: string) {
-  for (const doc of docs) {
-    const dir = doc.path.substring(0, doc.path.lastIndexOf("/"));
-    await Deno.mkdir(dir, { recursive: true });
-    await Deno.writeTextFile(doc.path, doc.content);
-    console.log(`Created: ${doc.path}`);
-  }
+	for (const doc of docs) {
+		const dir = doc.path.substring(0, doc.path.lastIndexOf('/'));
+		await Deno.mkdir(dir, { recursive: true });
+		await Deno.writeTextFile(doc.path, doc.content);
+		console.log(`Created: ${doc.path}`);
+	}
 
-  await Deno.writeTextFile("astro.config.mjs", astroConfig);
-  console.log("Updated: astro.config.mjs");
+	await Deno.writeTextFile('astro.config.mjs', astroConfig);
+	console.log('Updated: astro.config.mjs');
 }
 
 // Main
 async function main() {
-  const topic = Deno.args[0];
-  if (!topic) {
-    console.error("Usage: deno run generate.ts <topic>");
-    Deno.exit(1);
-  }
+	const topic = Deno.args[0];
+	if (!topic) {
+		console.error('Usage: deno run generate.ts <topic>');
+		Deno.exit(1);
+	}
 
-  console.log(`\nGenerating documentation for: "${topic}"\n`);
+	console.log(`\nGenerating documentation for: "${topic}"\n`);
 
-  // Step 1: Generate structure
-  console.log("1. Generating site structure...");
-  const structure = await generateStructure(topic);
-  console.log(`   - ${structure.categories.length} categories`);
-  console.log(
-    `   - ${structure.categories.reduce((sum, c) => sum + c.docs.length, 0)} documents`
-  );
+	// Step 1: Generate structure
+	console.log('1. Generating site structure...');
+	const structure = await generateStructure(topic);
+	console.log(`   - ${structure.categories.length} categories`);
+	console.log(`   - ${structure.categories.reduce((sum, c) => sum + c.docs.length, 0)} documents`);
 
-  // Step 2: Generate all documents in parallel
-  console.log("\n2. Generating documents in parallel...");
-  const tasks: Promise<GeneratedDoc>[] = [];
+	// Step 2: Generate all documents in parallel
+	console.log('\n2. Generating documents in parallel...');
+	const tasks: Promise<GeneratedDoc>[] = [];
 
-  tasks.push(generateIndexPage(structure));
+	tasks.push(generateIndexPage(structure));
 
-  for (const category of structure.categories) {
-    for (const doc of category.docs) {
-      tasks.push(generateDocument(structure, category, doc));
-    }
-  }
+	for (const category of structure.categories) {
+		for (const doc of category.docs) {
+			tasks.push(generateDocument(structure, category, doc));
+		}
+	}
 
-  const docs = await Promise.all(tasks);
-  console.log(`   - Generated ${docs.length} documents`);
+	const docs = await Promise.all(tasks);
+	console.log(`   - Generated ${docs.length} documents`);
 
-  // Step 3: Generate astro config
-  console.log("\n3. Generating astro.config.mjs...");
-  const astroConfig = generateAstroConfig(structure);
+	// Step 3: Generate astro config
+	console.log('\n3. Generating astro.config.mjs...');
+	const astroConfig = generateAstroConfig(structure);
 
-  // Step 4: Write files
-  console.log("\n4. Writing files...");
-  await writeFiles(docs, astroConfig);
+	// Step 4: Write files
+	console.log('\n4. Writing files...');
+	await writeFiles(docs, astroConfig);
 
-  console.log("\nDone!");
+	console.log('\nDone!');
 }
 
 main().catch((err) => {
-  console.error("Error:", err.message);
-  Deno.exit(1);
+	console.error('Error:', err.message);
+	Deno.exit(1);
 });

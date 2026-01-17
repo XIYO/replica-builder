@@ -44,9 +44,7 @@
 						</a>
 					</p>
 				</div>
-				<p class="mt-4 text-xs text-green-300">
-					배포 완료까지 약 2-3분 소요됩니다.
-				</p>
+				<p class="mt-4 text-xs text-green-300">배포 완료까지 약 2-3분 소요됩니다.</p>
 			</div>
 		{/if}
 
@@ -83,6 +81,47 @@
 				{#if form?.error === 'title'}
 					<p class="mt-1 text-sm text-red-400">{form.message}</p>
 				{/if}
+			</div>
+
+			<!-- Topic -->
+			<div>
+				<label for="topic" class="block text-sm font-medium text-slate-200"> 문서 주제 </label>
+				<input
+					type="text"
+					id="topic"
+					name="topic"
+					value={form?.topic ?? ''}
+					required
+					placeholder="React 학습 가이드, Docker 입문, API 레퍼런스 등"
+					class="mt-1 block w-full rounded-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500"
+				/>
+				<p class="mt-1 text-xs text-slate-400">AI가 이 주제로 초기 문서를 생성합니다</p>
+				{#if form?.error === 'topic'}
+					<p class="mt-1 text-sm text-red-400">{form.message}</p>
+				{/if}
+			</div>
+
+			<!-- Subdomain (optional) -->
+			<div>
+				<label for="subdomain" class="block text-sm font-medium text-slate-200">
+					서브도메인 <span class="text-slate-400">(선택)</span>
+				</label>
+				<div class="mt-1 flex rounded-md">
+					<input
+						type="text"
+						id="subdomain"
+						name="subdomain"
+						placeholder="my-docs"
+						pattern="[a-z0-9-]+"
+						class="block w-full rounded-l-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500"
+					/>
+					<span
+						class="inline-flex items-center rounded-r-md bg-slate-600 px-3 text-sm text-slate-300"
+					>
+						.xiyo.dev
+					</span>
+				</div>
+				<p class="mt-1 text-xs text-slate-400">비워두면 자동 생성됩니다</p>
 			</div>
 
 			<!-- Site Type -->

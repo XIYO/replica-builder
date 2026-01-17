@@ -27,41 +27,50 @@ export const actions = {
 		const data = await request.formData();
 
 		const title = data.get('title')?.toString().trim();
+		const topic = data.get('topic')?.toString().trim();
 		const siteType = data.get('siteType')?.toString();
 		const accentColor = data.get('accentColor')?.toString() || '#3b82f6';
+		const customSubdomain = data.get('subdomain')?.toString().trim();
 
 		if (!title) {
 			return fail(400, {
 				title,
+				topic,
 				siteType,
 				error: 'title',
 				message: '사이트 제목을 입력해주세요.'
 			});
 		}
 
+		if (!topic) {
+			return fail(400, {
+				title,
+				topic,
+				siteType,
+				error: 'topic',
+				message: '문서 주제를 입력해주세요.'
+			});
+		}
+
 		if (!siteType || !VALID_SITE_TYPES.includes(siteType as (typeof VALID_SITE_TYPES)[number])) {
 			return fail(400, {
 				title,
+				topic,
 				siteType,
 				error: 'siteType',
 				message: '사이트 종류를 선택해주세요.'
 			});
 		}
 
-		const subdomain = generateSubdomain();
+		const subdomain = customSubdomain || generateSubdomain();
 
-		const result = await triggerWorkflowDispatch(
-			githubToken,
-			REPO_OWNER,
-			REPO_NAME,
-			WORKFLOW_ID,
-			{
-				subdomain,
-				title,
-				site_type: siteType,
-				accent_color: accentColor
-			}
-		);
+		const result = await triggerWorkflowDispatch(githubToken, REPO_OWNER, REPO_NAME, WORKFLOW_ID, {
+			subdomain,
+			title,
+			topic,
+			site_type: siteType,
+			accent_color: accentColor
+		});
 
 		if (!result.success) {
 			return fail(result.status, {
