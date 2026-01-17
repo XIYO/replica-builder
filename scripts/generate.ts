@@ -75,7 +75,9 @@ async function callGemini<T>(prompt: string): Promise<T> {
   const text = data.candidates[0].content.parts[0].text;
 
   try {
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    // Handle array response (Gemini sometimes returns [{...}] instead of {...})
+    return Array.isArray(parsed) ? parsed[0] : parsed;
   } catch {
     console.error("JSON parse error. Raw response:");
     console.error(text.substring(0, 1000) + "...");
