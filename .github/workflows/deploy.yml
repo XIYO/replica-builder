@@ -10,33 +10,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '25'
+      - uses: oven-sh/setup-bun@v2
 
-      - name: Setup pnpm
-        run: npm install -g pnpm
+      - run: bun install
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm build
+      - run: bun run build
 
       - name: Ensure DNS record exists
         run: |
           SUBDOMAIN="replica-builder"
           HOSTNAME="${SUBDOMAIN}.xiyo.dev"
-
           EXISTING=$(curl -s "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?name=${HOSTNAME}" \
             -H "X-Auth-Email: ${{ secrets.CLOUDFLARE_EMAIL }}" \
             -H "X-Auth-Key: ${{ secrets.CLOUDFLARE_API_KEY }}" \
             | jq -r '.result | length')
-
           if [ "$EXISTING" = "0" ]; then
             echo "Creating DNS record for ${HOSTNAME}"
             curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
@@ -51,7 +40,7 @@ jobs:
 
       - name: Deploy to Cloudflare Workers
         run: |
-          npx wrangler deploy \
+          bunx wrangler deploy \
             --name "replica-builder-xiyo-dev" \
             --route "replica-builder.xiyo.dev/*"
         env:
