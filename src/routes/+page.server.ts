@@ -19,42 +19,47 @@ export const actions = {
 
 		const data = await request.formData();
 
-		const title = data.get('title')?.toString().trim();
-		const topic = data.get('topic')?.toString().trim();
-		const accentColor = data.get('accentColor')?.toString() || '#3b82f6';
-		const customSubdomain = data.get('subdomain')?.toString().trim();
+		// 모든 폼 데이터를 객체로 수집
+		const config: Record<string, string | boolean> = {};
+		for (const [key, value] of data.entries()) {
+			if (key === 'template') continue; // 템플릿 ID는 별도 처리
 
-		if (!title) {
+			// boolean 값 처리
+			if (value === 'true') {
+				config[key] = true;
+			} else if (value === 'false') {
+				config[key] = false;
+			} else {
+				config[key] = value.toString();
+			}
+		}
+
+		// 필수 필드 검증
+		if (!config.title) {
 			return fail(400, {
-				title,
-				topic,
 				error: 'title',
 				message: '사이트 제목을 입력해주세요.'
 			});
 		}
 
-		if (!topic) {
+		if (!config.topic) {
 			return fail(400, {
-				title,
-				topic,
 				error: 'topic',
 				message: '문서 주제를 입력해주세요.'
 			});
 		}
 
-		const subdomain = customSubdomain || generateSubdomain();
+		// subdomain 자동 생성
+		if (!config.subdomain) {
+			config.subdomain = generateSubdomain();
+		}
 
 		const result = await triggerWorkflowDispatch(githubToken, REPO_OWNER, REPO_NAME, WORKFLOW_ID, {
-			subdomain,
-			title,
-			topic,
-			accent_color: accentColor
+			config: JSON.stringify(config)
 		});
 
 		if (!result.success) {
 			return fail(result.status, {
-				title,
-				topic,
 				error: 'api',
 				message: result.error
 			});
@@ -62,7 +67,7 @@ export const actions = {
 
 		return {
 			success: true,
-			deployUrl: `https://${subdomain}.xiyo.dev`
+			deployUrl: `https://${config.subdomain}.xiyo.dev`
 		};
 	}
 } satisfies Actions;

@@ -3,20 +3,8 @@ name: Provision New Site
 on:
   workflow_dispatch:
     inputs:
-      subdomain:
-        description: '서브도메인 (예: my-docs)'
-        required: true
-        type: string
-      title:
-        description: '사이트 제목'
-        required: true
-        type: string
-      topic:
-        description: '문서 주제 (예: React 학습 가이드)'
-        required: true
-        type: string
-      accent_color:
-        description: '테마 색상 (예: #3b82f6)'
+      config:
+        description: 'Site configuration (JSON)'
         required: true
         type: string
 
@@ -29,6 +17,21 @@ jobs:
   provision:
     runs-on: ubuntu-latest
     steps:
+      - name: Parse config
+        id: config
+        run: |
+          echo '${{ inputs.config }}' > config.json
+          {
+            echo "subdomain=$(jq -r '.subdomain' config.json)"
+            echo "title=$(jq -r '.title' config.json)"
+            echo "topic=$(jq -r '.topic' config.json)"
+            echo "accentColor=$(jq -r '.accentColor // "#3b82f6"' config.json)"
+            echo "description=$(jq -r '.description // ""' config.json)"
+            echo "locale=$(jq -r '.locale // "ko"' config.json)"
+            echo "tableOfContents=$(jq -r '.tableOfContents // true' config.json)"
+            echo "lastUpdated=$(jq -r '.lastUpdated // false' config.json)"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create repo from template
         uses: actions/github-script@v7
         id: fork
@@ -72,13 +75,13 @@ jobs:
         run: |
           gh variable set SITE_SUBDOMAIN \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
-            --body "${{ inputs.subdomain }}"
+            --body "${{ steps.config.outputs.subdomain }}"
           gh variable set SITE_TITLE \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
-            --body "${{ inputs.title }}"
+            --body "${{ steps.config.outputs.title }}"
           gh variable set ACCENT_COLOR \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
-            --body "${{ inputs.accent_color }}"
+            --body "${{ steps.config.outputs.accentColor }}"
 
       - name: Wait for repo to be ready
         run: sleep 5
@@ -97,23 +100,21 @@ jobs:
 
       - name: Update site.config.json
         run: |
-          cat > site/site.config.json << EOF
-          {
-            "subdomain": "${{ inputs.subdomain }}",
-            "title": "${{ inputs.title }}",
-            "accentColor": "${{ inputs.accent_color }}",
-            "githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
-          }
+          cat > site/site.config.json << 'EOF'
+          ${{ inputs.config }}
           EOF
+          jq '. + {"githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"}' \
+            site/site.config.json > site/site.config.json.tmp
+          mv site/site.config.json.tmp site/site.config.json
 
       - name: Create custom CSS with accent color
         run: |
           mkdir -p site/src/styles
           cat > site/src/styles/custom.css << EOF
           :root {
-            --sl-color-accent-low: ${{ inputs.accent_color }}33;
-            --sl-color-accent: ${{ inputs.accent_color }};
-            --sl-color-accent-high: ${{ inputs.accent_color }}dd;
+            --sl-color-accent-low: ${{ steps.config.outputs.accentColor }}33;
+            --sl-color-accent: ${{ steps.config.outputs.accentColor }};
+            --sl-color-accent-high: ${{ steps.config.outputs.accentColor }}dd;
           }
           EOF
 
@@ -132,7 +133,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           deno run --allow-net --allow-write --allow-env --allow-read \
-            ../builder/scripts/generate.ts "${{ inputs.topic }}"
+            ../builder/scripts/generate.ts "${{ steps.config.outputs.topic }}"
 
       - name: Commit and push changes
         working-directory: site
@@ -140,19 +141,19 @@ jobs:
           git config user.name "Replica Builder Bot"
           git config user.email "bot@xiyo.dev"
           git add -A
-          git commit -m "feat: initialize ${{ inputs.title }} site
+          git commit -m "feat: initialize ${{ steps.config.outputs.title }} site
 
           Provisioned by Replica Builder
-          - Subdomain: ${{ inputs.subdomain }}
-          - Topic: ${{ inputs.topic }}
-          - Accent Color: ${{ inputs.accent_color }}"
+          - Subdomain: ${{ steps.config.outputs.subdomain }}
+          - Topic: ${{ steps.config.outputs.topic }}
+          - Accent Color: ${{ steps.config.outputs.accentColor }}"
           git push
 
       - name: Output result
         run: |
           echo "Site provisioned successfully!"
           echo ""
-          echo "URL: https://${{ inputs.subdomain }}.xiyo.dev"
+          echo "URL: https://${{ steps.config.outputs.subdomain }}.xiyo.dev"
           echo "Repo: https://github.com/${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
           echo ""
           echo "Deployment will start automatically via GitHub Actions."

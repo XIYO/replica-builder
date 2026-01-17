@@ -1,8 +1,5 @@
 export interface WorkflowInputs {
-	subdomain: string;
-	title: string;
-	topic: string;
-	accent_color: string;
+	config: string; // JSON string
 }
 
 interface GitHubErrorResponse {
