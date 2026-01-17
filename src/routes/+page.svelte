@@ -68,31 +68,6 @@
 			}}
 			class="space-y-6 rounded-xl bg-slate-800/50 p-8 shadow-xl"
 		>
-			<!-- Subdomain -->
-			<div>
-				<label for="subdomain" class="block text-sm font-medium text-slate-200"> 서브도메인 </label>
-				<div class="mt-1 flex rounded-md shadow-sm">
-					<input
-						type="text"
-						id="subdomain"
-						name="subdomain"
-						value={form?.subdomain ?? ''}
-						required
-						placeholder="my-docs"
-						class="block w-full rounded-l-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500"
-					/>
-					<span
-						class="inline-flex items-center rounded-r-md border-l-0 bg-slate-600 px-4 text-slate-300"
-					>
-						.xiyo.dev
-					</span>
-				</div>
-				{#if form?.error === 'subdomain'}
-					<p class="mt-1 text-sm text-red-400">{form.message}</p>
-				{/if}
-				<p class="mt-1 text-xs text-slate-400">소문자, 숫자, 하이픈만 사용 가능</p>
-			</div>
-
 			<!-- Title -->
 			<div>
 				<label for="title" class="block text-sm font-medium text-slate-200"> 사이트 제목 </label>

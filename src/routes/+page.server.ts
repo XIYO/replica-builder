@@ -9,10 +9,13 @@ const VALID_SITE_TYPES = [
 	'learning',
 	'personal'
 ] as const;
-const SUBDOMAIN_PATTERN = /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/;
 const REPO_OWNER = 'xiyo';
 const REPO_NAME = 'replica-builder';
 const WORKFLOW_ID = 'provision.yml';
+
+function generateSubdomain() {
+	return crypto.randomUUID().split('-')[0];
+}
 
 export const actions = {
 	default: async ({ request, platform }) => {
@@ -23,44 +26,12 @@ export const actions = {
 
 		const data = await request.formData();
 
-		const subdomain = data.get('subdomain')?.toString().trim().toLowerCase();
 		const title = data.get('title')?.toString().trim();
 		const siteType = data.get('siteType')?.toString();
 		const accentColor = data.get('accentColor')?.toString() || '#3b82f6';
 
-		if (!subdomain) {
-			return fail(400, {
-				subdomain,
-				title,
-				siteType,
-				error: 'subdomain',
-				message: '서브도메인을 입력해주세요.'
-			});
-		}
-
-		if (!SUBDOMAIN_PATTERN.test(subdomain)) {
-			return fail(400, {
-				subdomain,
-				title,
-				siteType,
-				error: 'subdomain',
-				message: '소문자, 숫자, 하이픈만 사용 가능합니다.'
-			});
-		}
-
-		if (subdomain.length < 2 || subdomain.length > 63) {
-			return fail(400, {
-				subdomain,
-				title,
-				siteType,
-				error: 'subdomain',
-				message: '2-63자 사이여야 합니다.'
-			});
-		}
-
 		if (!title) {
 			return fail(400, {
-				subdomain,
 				title,
 				siteType,
 				error: 'title',
@@ -70,13 +41,14 @@ export const actions = {
 
 		if (!siteType || !VALID_SITE_TYPES.includes(siteType as (typeof VALID_SITE_TYPES)[number])) {
 			return fail(400, {
-				subdomain,
 				title,
 				siteType,
 				error: 'siteType',
 				message: '사이트 종류를 선택해주세요.'
 			});
 		}
+
+		const subdomain = generateSubdomain();
 
 		const result = await triggerWorkflowDispatch(
 			githubToken,
@@ -93,7 +65,6 @@ export const actions = {
 
 		if (!result.success) {
 			return fail(result.status, {
-				subdomain,
 				title,
 				siteType,
 				error: 'api',
