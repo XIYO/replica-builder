@@ -5,14 +5,6 @@
 	let { form }: { form: ActionData } = $props();
 
 	let submitting = $state(false);
-
-	const siteTypes = [
-		{ value: 'tech-docs', label: 'Technical Documentation' },
-		{ value: 'product-docs', label: 'Product Documentation' },
-		{ value: 'api-reference', label: 'API Reference' },
-		{ value: 'learning', label: 'Learning / Tutorial' },
-		{ value: 'personal', label: 'Personal / Blog' }
-	];
 </script>
 
 <svelte:head>
@@ -122,24 +114,6 @@
 					</span>
 				</div>
 				<p class="mt-1 text-xs text-slate-400">비워두면 자동 생성됩니다</p>
-			</div>
-
-			<!-- Site Type -->
-			<div>
-				<label for="siteType" class="block text-sm font-medium text-slate-200"> 사이트 종류 </label>
-				<select
-					id="siteType"
-					name="siteType"
-					required
-					class="mt-1 block w-full rounded-md border-0 bg-slate-700 px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
-				>
-					{#each siteTypes as { value, label } (value)}
-						<option {value} selected={form?.siteType === value}>{label}</option>
-					{/each}
-				</select>
-				{#if form?.error === 'siteType'}
-					<p class="mt-1 text-sm text-red-400">{form.message}</p>
-				{/if}
 			</div>
 
 			<!-- Accent Color -->

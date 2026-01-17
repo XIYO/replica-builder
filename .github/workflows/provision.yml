@@ -15,16 +15,6 @@ on:
         description: '문서 주제 (예: React 학습 가이드)'
         required: true
         type: string
-      site_type:
-        description: '사이트 종류'
-        required: true
-        type: choice
-        options:
-          - tech-docs
-          - product-docs
-          - api-reference
-          - learning
-          - personal
       accent_color:
         description: '테마 색상 (예: #3b82f6)'
         required: true
@@ -86,9 +76,6 @@ jobs:
           gh variable set SITE_TITLE \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.title }}"
-          gh variable set SITE_TYPE \
-            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
-            --body "${{ inputs.site_type }}"
           gh variable set ACCENT_COLOR \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.accent_color }}"
@@ -114,7 +101,6 @@ jobs:
           {
             "subdomain": "${{ inputs.subdomain }}",
             "title": "${{ inputs.title }}",
-            "siteType": "${{ inputs.site_type }}",
             "accentColor": "${{ inputs.accent_color }}",
             "githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
           }
@@ -159,7 +145,6 @@ jobs:
           Provisioned by Replica Builder
           - Subdomain: ${{ inputs.subdomain }}
           - Topic: ${{ inputs.topic }}
-          - Site Type: ${{ inputs.site_type }}
           - Accent Color: ${{ inputs.accent_color }}"
           git push
 
