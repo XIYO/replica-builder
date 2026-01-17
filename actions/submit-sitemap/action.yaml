@@ -1,0 +1,53 @@
+name: Submit Sitemap to Google
+description: "Google Search Console API를 통해 sitemap을 제출합니다 (Workload Identity 인증)"
+
+inputs:
+  site-url:
+    description: "사이트 URL (예: https://example.xiyo.dev)"
+    required: true
+  sitemap-path:
+    description: "sitemap 경로 (예: /sitemap.xml)"
+    required: false
+    default: /sitemap.xml
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: "projects/213947720797/locations/global/workloadIdentityPools/github/providers/github"
+        service_account: "sitemap-submitter@replica-builder.iam.gserviceaccount.com"
+
+    - name: Submit sitemap to Google Search Console
+      shell: bash
+      env:
+        SITE_URL: ${{ inputs.site-url }}
+        SITEMAP_PATH: ${{ inputs.sitemap-path }}
+      run: |
+        set -e
+
+        ACCESS_TOKEN="${{ steps.auth.outputs.access_token }}"
+        SITEMAP_URL="${SITE_URL}${SITEMAP_PATH}"
+
+        # URL encode
+        ENCODED_SITE=$(echo -n "$SITE_URL" | jq -sRr @uri)
+        ENCODED_SITEMAP=$(echo -n "$SITEMAP_URL" | jq -sRr @uri)
+
+        echo "Submitting sitemap: $SITEMAP_URL"
+
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
+          "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/sitemaps/${ENCODED_SITEMAP}" \
+          -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+          -H "Content-Length: 0")
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
+
+        if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+          echo "::notice::Sitemap submitted successfully: $SITEMAP_URL"
+        else
+          echo "::warning::Sitemap submission returned HTTP $HTTP_CODE"
+          echo "$BODY"
+        fi
