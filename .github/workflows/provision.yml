@@ -19,15 +19,13 @@ jobs:
         id: config
         run: |
           echo '${{ inputs.config }}' > config.json
-          # template 값 추출 (기본값: template-00)
-          TEMPLATE=$(jq -r '.template // "template-00"' config.json)
-          # template-XX -> replica-template-XX 형식으로 변환
-          TEMPLATE_REPO="replica-${TEMPLATE}"
+          # template 값 추출 (기본값: replica-template-00)
+          TEMPLATE_REPO=$(jq -r '.template // "replica-template-00"' config.json)
           {
             echo "subdomain=$(jq -r '.subdomain' config.json)"
             echo "title=$(jq -r '.title' config.json)"
             echo "topic=$(jq -r '.topic' config.json)"
-            echo "template=${TEMPLATE}"
+            echo "template=${TEMPLATE_REPO}"
             echo "templateRepo=${TEMPLATE_REPO}"
             echo "accentColor=$(jq -r '.accentColor // "#3b82f6"' config.json)"
             echo "description=$(jq -r '.description // ""' config.json)"
@@ -114,7 +112,7 @@ jobs:
 
       # Starlight (template-00) 전용 단계들
       - name: Create custom CSS with accent color (Starlight)
-        if: steps.config.outputs.template == 'template-00'
+        if: steps.config.outputs.template == 'replica-template-00'
         run: |
           mkdir -p site/src/styles
           cat > site/src/styles/custom.css << EOF
@@ -126,18 +124,18 @@ jobs:
           EOF
 
       - name: Setup Deno (Starlight)
-        if: steps.config.outputs.template == 'template-00'
+        if: steps.config.outputs.template == 'replica-template-00'
         uses: denoland/setup-deno@v2
 
       - name: Remove default content (Starlight)
-        if: steps.config.outputs.template == 'template-00'
+        if: steps.config.outputs.template == 'replica-template-00'
         run: |
           rm -rf site/src/content/docs/guides
           rm -rf site/src/content/docs/reference
           rm -f site/src/content/docs/index.mdx
 
       - name: Generate initial content with AI (Starlight)
-        if: steps.config.outputs.template == 'template-00'
+        if: steps.config.outputs.template == 'replica-template-00'
         working-directory: site
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
