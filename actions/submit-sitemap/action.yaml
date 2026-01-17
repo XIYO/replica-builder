@@ -33,11 +33,12 @@ runs:
         ACCESS_TOKEN="${{ steps.auth.outputs.access_token }}"
         SITEMAP_URL="${SITE_URL}${SITEMAP_PATH}"
 
-        # URL encode
-        ENCODED_SITE=$(echo -n "$SITE_URL" | jq -sRr @uri)
+        # 도메인 속성 형식 사용 (sc-domain:xiyo.dev)
+        SITE_PROPERTY="sc-domain:xiyo.dev"
+        ENCODED_SITE=$(echo -n "$SITE_PROPERTY" | jq -sRr @uri)
         ENCODED_SITEMAP=$(echo -n "$SITEMAP_URL" | jq -sRr @uri)
 
-        echo "Submitting sitemap: $SITEMAP_URL"
+        echo "Submitting sitemap: $SITEMAP_URL to $SITE_PROPERTY"
 
         RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
           "https://www.googleapis.com/webmasters/v3/sites/${ENCODED_SITE}/sitemaps/${ENCODED_SITEMAP}" \
