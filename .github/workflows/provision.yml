@@ -1,0 +1,164 @@
+name: Provision New Site
+
+on:
+  workflow_dispatch:
+    inputs:
+      subdomain:
+        description: '서브도메인 (예: my-docs)'
+        required: true
+        type: string
+      title:
+        description: '사이트 제목'
+        required: true
+        type: string
+      site_type:
+        description: '사이트 종류'
+        required: true
+        type: choice
+        options:
+          - tech-docs
+          - product-docs
+          - api-reference
+          - learning
+          - personal
+      accent_color:
+        description: '테마 색상 (예: #3b82f6)'
+        required: true
+        type: string
+      github_username:
+        description: '포크할 GitHub 사용자명'
+        required: true
+        type: string
+
+env:
+  TEMPLATE_REPO: replica-template-00
+  FORKED_REPO_PREFIX: replica-template-00
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create repo from template
+        uses: actions/github-script@v7
+        id: fork
+        with:
+          github-token: ${{ secrets.PROVISION_TOKEN }}
+          script: |
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+            const newRepoName = `${{ env.FORKED_REPO_PREFIX }}-${timestamp}`;
+            const { data: repo } = await github.rest.repos.createUsingTemplate({
+              template_owner: 'xiyo',
+              template_repo: '${{ env.TEMPLATE_REPO }}',
+              owner: '${{ inputs.github_username }}',
+              name: newRepoName,
+              include_all_branches: false,
+            });
+            console.log(`Created from template: ${repo.full_name}`);
+            core.setOutput('fork_repo', repo.full_name);
+            core.setOutput('fork_name', newRepoName);
+
+      - name: Wait for repo to be ready
+        run: sleep 5
+
+      - name: Checkout forked repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}
+          token: ${{ secrets.PROVISION_TOKEN }}
+          path: site
+
+      - name: Update site.config.json
+        run: |
+          cat > site/site.config.json << EOF
+          {
+            "subdomain": "${{ inputs.subdomain }}",
+            "title": "${{ inputs.title }}",
+            "siteType": "${{ inputs.site_type }}",
+            "accentColor": "${{ inputs.accent_color }}",
+            "githubRepo": "${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}"
+          }
+          EOF
+
+      - name: Create custom CSS with accent color
+        run: |
+          mkdir -p site/src/styles
+          cat > site/src/styles/custom.css << EOF
+          :root {
+            --sl-color-accent-low: ${{ inputs.accent_color }}33;
+            --sl-color-accent: ${{ inputs.accent_color }};
+            --sl-color-accent-high: ${{ inputs.accent_color }}dd;
+          }
+          EOF
+
+      - name: Generate content with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          INDEX_CONTENT=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "contents": [{
+                "parts": [{
+                  "text": "다음 정보로 Astro Starlight 문서 사이트의 메인 페이지(index.mdx)를 작성해주세요.\n\n사이트 제목: ${{ inputs.title }}\n사이트 종류: ${{ inputs.site_type }}\n\nMDX frontmatter 포함. 한국어로 작성. hero 섹션과 CardGrid 포함.\n\n---\ntitle: 제목\ndescription: 설명\ntemplate: splash\nhero:\n  tagline: 태그라인\n  actions:\n    - text: 시작하기\n      link: /guides/example/\n      icon: right-arrow\n---\n\nimport { Card, CardGrid } from \"@astrojs/starlight/components\";\n\n형식으로 작성."
+                }]
+              }]
+            }' | jq -r '.candidates[0].content.parts[0].text')
+          echo "$INDEX_CONTENT" > site/src/content/docs/index.mdx
+
+      - name: Set GitHub Secrets on forked repo
+        env:
+          GH_TOKEN: ${{ secrets.PROVISION_TOKEN }}
+        run: |
+          gh secret set CLOUDFLARE_API_KEY \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ secrets.CLOUDFLARE_API_KEY }}"
+          gh secret set CLOUDFLARE_EMAIL \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ secrets.CLOUDFLARE_EMAIL }}"
+          gh secret set CLOUDFLARE_ACCOUNT_ID \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          gh secret set CLOUDFLARE_ZONE_ID \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
+      - name: Set GitHub Variables on forked repo
+        env:
+          GH_TOKEN: ${{ secrets.PROVISION_TOKEN }}
+        run: |
+          gh variable set SITE_SUBDOMAIN \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ inputs.subdomain }}"
+          gh variable set SITE_TITLE \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ inputs.title }}"
+          gh variable set SITE_TYPE \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ inputs.site_type }}"
+          gh variable set ACCENT_COLOR \
+            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ inputs.accent_color }}"
+
+      - name: Commit and push changes
+        working-directory: site
+        run: |
+          git config user.name "Replica Builder Bot"
+          git config user.email "bot@xiyo.dev"
+          git add -A
+          git commit -m "feat: initialize ${{ inputs.title }} site
+
+          Provisioned by Replica Builder
+          - Subdomain: ${{ inputs.subdomain }}
+          - Site Type: ${{ inputs.site_type }}
+          - Accent Color: ${{ inputs.accent_color }}"
+          git push
+
+      - name: Output result
+        run: |
+          echo "Site provisioned successfully!"
+          echo ""
+          echo "URL: https://${{ inputs.subdomain }}.xiyo.dev"
+          echo "Repo: https://github.com/${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}"
+          echo ""
+          echo "Deployment will start automatically via GitHub Actions."
