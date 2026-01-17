@@ -55,39 +55,6 @@ jobs:
             core.setOutput('fork_repo', repo.full_name);
             core.setOutput('fork_name', newRepoName);
 
-      - name: Wait for repo to be ready
-        run: sleep 5
-
-      - name: Checkout forked repo
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}
-          token: ${{ secrets.PROVISION_TOKEN }}
-          path: site
-
-      - name: Update site.config.json
-        run: |
-          cat > site/site.config.json << EOF
-          {
-            "subdomain": "${{ inputs.subdomain }}",
-            "title": "${{ inputs.title }}",
-            "siteType": "${{ inputs.site_type }}",
-            "accentColor": "${{ inputs.accent_color }}",
-            "githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
-          }
-          EOF
-
-      - name: Create custom CSS with accent color
-        run: |
-          mkdir -p site/src/styles
-          cat > site/src/styles/custom.css << EOF
-          :root {
-            --sl-color-accent-low: ${{ inputs.accent_color }}33;
-            --sl-color-accent: ${{ inputs.accent_color }};
-            --sl-color-accent-high: ${{ inputs.accent_color }}dd;
-          }
-          EOF
-
       - name: Set GitHub Secrets on forked repo
         env:
           GH_TOKEN: ${{ secrets.PROVISION_TOKEN }}
@@ -121,6 +88,39 @@ jobs:
           gh variable set ACCENT_COLOR \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.accent_color }}"
+
+      - name: Wait for repo to be ready
+        run: sleep 5
+
+      - name: Checkout forked repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}
+          token: ${{ secrets.PROVISION_TOKEN }}
+          path: site
+
+      - name: Update site.config.json
+        run: |
+          cat > site/site.config.json << EOF
+          {
+            "subdomain": "${{ inputs.subdomain }}",
+            "title": "${{ inputs.title }}",
+            "siteType": "${{ inputs.site_type }}",
+            "accentColor": "${{ inputs.accent_color }}",
+            "githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
+          }
+          EOF
+
+      - name: Create custom CSS with accent color
+        run: |
+          mkdir -p site/src/styles
+          cat > site/src/styles/custom.css << EOF
+          :root {
+            --sl-color-accent-low: ${{ inputs.accent_color }}33;
+            --sl-color-accent: ${{ inputs.accent_color }};
+            --sl-color-accent-high: ${{ inputs.accent_color }}dd;
+          }
+          EOF
 
       - name: Commit and push changes
         working-directory: site
