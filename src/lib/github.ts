@@ -3,7 +3,6 @@ export interface WorkflowInputs {
 	title: string;
 	site_type: string;
 	accent_color: string;
-	github_username: string;
 }
 
 interface GitHubErrorResponse {

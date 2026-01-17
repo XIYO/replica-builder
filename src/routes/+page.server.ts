@@ -27,14 +27,12 @@ export const actions = {
 		const title = data.get('title')?.toString().trim();
 		const siteType = data.get('siteType')?.toString();
 		const accentColor = data.get('accentColor')?.toString() || '#3b82f6';
-		const githubUsername = data.get('githubUsername')?.toString().trim();
 
 		if (!subdomain) {
 			return fail(400, {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'subdomain',
 				message: '서브도메인을 입력해주세요.'
 			});
@@ -45,7 +43,6 @@ export const actions = {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'subdomain',
 				message: '소문자, 숫자, 하이픈만 사용 가능합니다.'
 			});
@@ -56,7 +53,6 @@ export const actions = {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'subdomain',
 				message: '2-63자 사이여야 합니다.'
 			});
@@ -67,7 +63,6 @@ export const actions = {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'title',
 				message: '사이트 제목을 입력해주세요.'
 			});
@@ -78,20 +73,8 @@ export const actions = {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'siteType',
 				message: '사이트 종류를 선택해주세요.'
-			});
-		}
-
-		if (!githubUsername) {
-			return fail(400, {
-				subdomain,
-				title,
-				siteType,
-				githubUsername,
-				error: 'githubUsername',
-				message: 'GitHub 사용자명을 입력해주세요.'
 			});
 		}
 
@@ -104,8 +87,7 @@ export const actions = {
 				subdomain,
 				title,
 				site_type: siteType,
-				accent_color: accentColor,
-				github_username: githubUsername
+				accent_color: accentColor
 			}
 		);
 
@@ -114,7 +96,6 @@ export const actions = {
 				subdomain,
 				title,
 				siteType,
-				githubUsername,
 				error: 'api',
 				message: result.error
 			});
@@ -122,8 +103,7 @@ export const actions = {
 
 		return {
 			success: true,
-			deployUrl: `https://${subdomain}.xiyo.dev`,
-			reposUrl: `https://github.com/${githubUsername}?tab=repositories`
+			deployUrl: `https://${subdomain}.xiyo.dev`
 		};
 	}
 } satisfies Actions;

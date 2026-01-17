@@ -25,14 +25,11 @@ on:
         description: '테마 색상 (예: #3b82f6)'
         required: true
         type: string
-      github_username:
-        description: '포크할 GitHub 사용자명'
-        required: true
-        type: string
 
 env:
   TEMPLATE_REPO: replica-template-00
   FORKED_REPO_PREFIX: replica-template-00
+  GITHUB_OWNER: xiyo
 
 jobs:
   provision:
@@ -50,7 +47,7 @@ jobs:
             const { data: repo } = await github.rest.repos.createUsingTemplate({
               template_owner: 'xiyo',
               template_repo: '${{ env.TEMPLATE_REPO }}',
-              owner: '${{ inputs.github_username }}',
+              owner: '${{ env.GITHUB_OWNER }}',
               name: newRepoName,
               include_all_branches: false,
             });
@@ -64,7 +61,7 @@ jobs:
       - name: Checkout forked repo
         uses: actions/checkout@v6
         with:
-          repository: ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}
+          repository: ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}
           token: ${{ secrets.PROVISION_TOKEN }}
           path: site
 
@@ -76,7 +73,7 @@ jobs:
             "title": "${{ inputs.title }}",
             "siteType": "${{ inputs.site_type }}",
             "accentColor": "${{ inputs.accent_color }}",
-            "githubRepo": "${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}"
+            "githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
           }
           EOF
 
@@ -111,16 +108,16 @@ jobs:
           GH_TOKEN: ${{ secrets.PROVISION_TOKEN }}
         run: |
           gh secret set CLOUDFLARE_API_KEY \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ secrets.CLOUDFLARE_API_KEY }}"
           gh secret set CLOUDFLARE_EMAIL \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ secrets.CLOUDFLARE_EMAIL }}"
           gh secret set CLOUDFLARE_ACCOUNT_ID \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
           gh secret set CLOUDFLARE_ZONE_ID \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
       - name: Set GitHub Variables on forked repo
@@ -128,16 +125,16 @@ jobs:
           GH_TOKEN: ${{ secrets.PROVISION_TOKEN }}
         run: |
           gh variable set SITE_SUBDOMAIN \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.subdomain }}"
           gh variable set SITE_TITLE \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.title }}"
           gh variable set SITE_TYPE \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.site_type }}"
           gh variable set ACCENT_COLOR \
-            --repo ${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }} \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ inputs.accent_color }}"
 
       - name: Commit and push changes
@@ -159,6 +156,6 @@ jobs:
           echo "Site provisioned successfully!"
           echo ""
           echo "URL: https://${{ inputs.subdomain }}.xiyo.dev"
-          echo "Repo: https://github.com/${{ inputs.github_username }}/${{ steps.fork.outputs.fork_name }}"
+          echo "Repo: https://github.com/${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"
           echo ""
           echo "Deployment will start automatically via GitHub Actions."

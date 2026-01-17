@@ -43,20 +43,9 @@
 							{form.deployUrl}
 						</a>
 					</p>
-					<p>
-						GitHub 리포지토리:
-						<a
-							href={form.reposUrl}
-							target="_blank"
-							rel="external"
-							class="underline hover:text-green-100"
-						>
-							내 리포지토리에서 확인
-						</a>
-					</p>
 				</div>
 				<p class="mt-4 text-xs text-green-300">
-					배포 완료까지 약 2-3분 소요됩니다. GitHub Actions에서 진행 상황을 확인하세요.
+					배포 완료까지 약 2-3분 소요됩니다.
 				</p>
 			</div>
 		{/if}
@@ -151,25 +140,6 @@
 					value="#3b82f6"
 					class="mt-1 h-10 w-full cursor-pointer rounded-md border-0 bg-slate-700 p-1"
 				/>
-			</div>
-
-			<!-- GitHub Username -->
-			<div>
-				<label for="githubUsername" class="block text-sm font-medium text-slate-200">
-					GitHub 사용자명
-				</label>
-				<input
-					type="text"
-					id="githubUsername"
-					name="githubUsername"
-					value={form?.githubUsername ?? ''}
-					required
-					placeholder="your-username"
-					class="mt-1 block w-full rounded-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500"
-				/>
-				{#if form?.error === 'githubUsername'}
-					<p class="mt-1 text-sm text-red-400">{form.message}</p>
-				{/if}
 			</div>
 
 			<!-- Submit Button -->
