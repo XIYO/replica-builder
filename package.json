@@ -38,6 +38,7 @@
 		"@tailwindcss/forms": "^0.5.10",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
+		"@types/js-yaml": "^4.0.9",
 		"@types/node": "^24",
 		"@vitest/browser-playwright": "^4.0.15",
 		"@vitest/coverage-v8": "^4.0.15",
@@ -61,5 +62,8 @@
 		"vitest": "^4.0.15",
 		"vitest-browser-svelte": "^2.0.1",
 		"wrangler": "^4.56.0"
+	},
+	"dependencies": {
+		"js-yaml": "^4.1.1"
 	}
 }

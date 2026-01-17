@@ -1,3 +1,13 @@
+# Project Guidelines
+
+## Package Manager
+
+- 이 프로젝트는 **bun**만 사용 (pnpm, npm 사용 금지)
+- 의존성 설치: `bun install`
+- 스크립트 실행: `bun run dev`, `bun run build`, `bun run lint`
+
+---
+
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
 
 ## Available MCP Tools:
