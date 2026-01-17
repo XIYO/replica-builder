@@ -112,7 +112,9 @@ function toMarkdown(doc: DocContent): string {
 
 	lines.push('---');
 	lines.push('');
-	lines.push(doc.content);
+	// Convert escaped newlines to actual newlines
+	const content = doc.content.replace(/\\n/g, '\n');
+	lines.push(content);
 
 	return lines.join('\n');
 }
@@ -176,38 +178,40 @@ async function generateDocument(
 
 	const prompt = `당신은 기술 문서 작성자입니다. 다음 문서를 작성하세요.
 
-## 전체 사이트 구조
-주제: ${structure.topic}
-
-문서 목록:
-${otherDocs}
-
 ## 작성할 문서
-카테고리: ${category.label} (${category.name})
+카테고리: ${category.label}
 제목: ${doc.title}
 설명: ${doc.description}
 
-## 응답 JSON 스키마
+## 응답 형식
+아래 JSON 형식으로 응답하세요:
+
 {
   "frontmatter": {
-    "title": "string - 문서 제목",
-    "description": "string - 문서 설명"
+    "title": "문서 제목",
+    "description": "문서 설명 (1-2문장)"
   },
-  "content": "string - 마크다운 본문 (frontmatter 제외)"
+  "content": "마크다운 본문"
 }
 
-## 본문 작성 요구사항
-- 실용적인 예제 코드 포함
+## Few-shot 예시
+
+입력: 제목 "변수와 타입", 설명 "JavaScript의 변수 선언과 타입 시스템"
+
+출력:
+{
+  "frontmatter": {
+    "title": "변수와 타입",
+    "description": "JavaScript의 변수 선언 방법과 동적 타입 시스템을 알아봅니다."
+  },
+  "content": "## 변수 선언\\n\\nJavaScript에서 변수를 선언하는 세 가지 방법이 있습니다.\\n\\n### let과 const\\n\\n\`\`\`javascript\\nlet count = 0;\\nconst PI = 3.14;\\n\`\`\`\\n\\n- **let**: 재할당 가능한 변수\\n- **const**: 재할당 불가능한 상수\\n\\n### 데이터 타입\\n\\nJavaScript는 동적 타입 언어입니다:\\n\\n1. string - 문자열\\n2. number - 숫자\\n3. boolean - 불리언\\n4. object - 객체\\n\\n> 💡 TypeScript를 사용하면 정적 타입 검사가 가능합니다."
+}
+
+## 작성 요구사항
 - 300-500 단어
 - 한국어로 작성
-- 다른 문서와의 연관성 고려
-- 마크다운 문법 사용 (헤더, 리스트, 코드블록 등)
-
-## 중요: JSON 형식 규칙
-- content 필드는 단일 문자열로 작성
-- 개행은 반드시 \\n으로 이스케이프
-- 큰따옴표는 \\"로 이스케이프
-- 백슬래시는 \\\\로 이스케이프`;
+- 마크다운 헤더(##, ###), 리스트(-, 1.), 코드블록(\`\`\`) 적극 활용
+- 실용적인 예제 포함`;
 
 	const result = await callGemini<DocContent>(prompt);
 	return {

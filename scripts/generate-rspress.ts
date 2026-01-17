@@ -103,24 +103,36 @@ async function generateStructure(topic: string): Promise<SiteStructure> {
 async function generateDocument(structure: SiteStructure, category: Category, doc: DocInfo): Promise<GeneratedDoc> {
 	const prompt = `당신은 기술 문서 작성자입니다. 다음 문서를 작성하세요.
 
-주제: ${structure.topic}
+## 작성할 문서
 카테고리: ${category.label}
 제목: ${doc.title}
 설명: ${doc.description}
 
-## 응답 JSON 스키마
+## 응답 형식
+아래 JSON 형식으로 응답하세요:
+
 {
-  "title": "string - 문서 제목",
-  "description": "string - 문서 설명",
-  "content": "string - 마크다운 본문"
+  "title": "문서 제목",
+  "description": "문서 설명 (1-2문장)",
+  "content": "마크다운 본문"
 }
 
-요구사항:
-- 실용적인 예제 포함
-- 400-600 단어
+## Few-shot 예시
+
+입력: 제목 "변수와 타입", 설명 "JavaScript의 변수 선언과 타입 시스템"
+
+출력:
+{
+  "title": "변수와 타입",
+  "description": "JavaScript의 변수 선언 방법과 동적 타입 시스템을 알아봅니다.",
+  "content": "## 변수 선언\\n\\nJavaScript에서 변수를 선언하는 세 가지 방법이 있습니다.\\n\\n### let과 const\\n\\n\`\`\`javascript\\nlet count = 0;\\nconst PI = 3.14;\\n\`\`\`\\n\\n- **let**: 재할당 가능한 변수\\n- **const**: 재할당 불가능한 상수\\n\\n### 데이터 타입\\n\\nJavaScript는 동적 타입 언어입니다:\\n\\n1. string - 문자열\\n2. number - 숫자\\n3. boolean - 불리언\\n4. object - 객체\\n\\n> 💡 TypeScript를 사용하면 정적 타입 검사가 가능합니다."
+}
+
+## 작성 요구사항
+- 300-500 단어
 - 한국어로 작성
-- 마크다운 문법 사용
-- content에서 개행은 \\n으로 이스케이프`;
+- 마크다운 헤더(##, ###), 리스트(-, 1.), 코드블록(\`\`\`) 적극 활용
+- 실용적인 예제 포함`;
 
 	const result = await callGemini<DocContent>(prompt);
 	const md = `# ${result.title}\n\n${result.description}\n\n${result.content}`;
