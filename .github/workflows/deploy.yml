@@ -1,0 +1,60 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+
+      - name: Setup pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Ensure DNS record exists
+        run: |
+          SUBDOMAIN="replica-builder"
+          HOSTNAME="${SUBDOMAIN}.xiyo.dev"
+
+          EXISTING=$(curl -s "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records?name=${HOSTNAME}" \
+            -H "X-Auth-Email: ${{ secrets.CLOUDFLARE_EMAIL }}" \
+            -H "X-Auth-Key: ${{ secrets.CLOUDFLARE_API_KEY }}" \
+            | jq -r '.result | length')
+
+          if [ "$EXISTING" = "0" ]; then
+            echo "Creating DNS record for ${HOSTNAME}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/dns_records" \
+              -H "X-Auth-Email: ${{ secrets.CLOUDFLARE_EMAIL }}" \
+              -H "X-Auth-Key: ${{ secrets.CLOUDFLARE_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"type\":\"AAAA\",\"name\":\"${SUBDOMAIN}\",\"content\":\"100::\",\"proxied\":true}"
+            echo "DNS record created"
+          else
+            echo "DNS record already exists for ${HOSTNAME}"
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        run: |
+          npx wrangler deploy \
+            --name "replica-builder-xiyo-dev" \
+            --route "replica-builder.xiyo.dev/*"
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
