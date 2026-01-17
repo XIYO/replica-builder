@@ -9,15 +9,43 @@
 	let currentStep = $state(1);
 	let submitting = $state(false);
 
-	// 템플릿 목록 (확장 가능)
+	// 템플릿 목록
 	const templates = [
 		{
 			id: 'replica-template-00',
-			name: 'Starlight Docs',
+			name: 'Starlight',
+			framework: 'Astro',
 			description: 'Starlight 기반 문서 사이트',
 			preview: 'https://replica-template-00.xiyo.dev',
 			schemaUrl:
 				'https://raw.githubusercontent.com/XIYO/replica-template-00/main/config.schema.yaml'
+		},
+		{
+			id: 'replica-template-01',
+			name: 'VitePress',
+			framework: 'Vue',
+			description: 'VitePress 기반 문서 사이트',
+			preview: 'https://replica-template-01.xiyo.dev',
+			schemaUrl:
+				'https://raw.githubusercontent.com/XIYO/replica-template-01/main/config.schema.yaml'
+		},
+		{
+			id: 'replica-template-02',
+			name: 'Docusaurus',
+			framework: 'React',
+			description: 'Docusaurus 기반 문서 사이트',
+			preview: 'https://replica-template-02.xiyo.dev',
+			schemaUrl:
+				'https://raw.githubusercontent.com/XIYO/replica-template-02/main/config.schema.yaml'
+		},
+		{
+			id: 'replica-template-03',
+			name: 'Rspress',
+			framework: 'React',
+			description: 'Rspress 기반 문서 사이트',
+			preview: 'https://replica-template-03.xiyo.dev',
+			schemaUrl:
+				'https://raw.githubusercontent.com/XIYO/replica-template-03/main/config.schema.yaml'
 		}
 	];
 
@@ -167,7 +195,12 @@
 							class="group flex items-center gap-4 rounded-xl bg-slate-800/50 p-6 text-left transition hover:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
 						>
 							<div class="flex-1">
-								<h3 class="text-lg font-semibold text-white">{template.name}</h3>
+								<div class="flex items-center gap-2">
+									<h3 class="text-lg font-semibold text-white">{template.name}</h3>
+									<span class="rounded bg-slate-600 px-2 py-0.5 text-xs text-slate-300">
+										{template.framework}
+									</span>
+								</div>
 								<p class="mt-1 text-sm text-slate-400">{template.description}</p>
 								<a
 									href={template.preview}
