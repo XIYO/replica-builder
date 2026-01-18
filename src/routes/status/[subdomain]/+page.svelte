@@ -186,16 +186,6 @@
 							사이트 방문하기 →
 						</a>
 					{/if}
-					{#if run?.html_url}
-						<a
-							href={run.html_url}
-							target="_blank"
-							rel="external"
-							class="block w-full rounded-md bg-slate-600 px-4 py-2 text-center text-sm text-white transition hover:bg-slate-500"
-						>
-							GitHub Actions 로그 보기
-						</a>
-					{/if}
 					<a
 						href={resolve('/')}
 						class="block w-full rounded-md border border-slate-600 px-4 py-2 text-center text-sm text-slate-300 transition hover:bg-slate-700"
