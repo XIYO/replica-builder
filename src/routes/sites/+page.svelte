@@ -21,6 +21,41 @@
 		'template-02': 'Docusaurus',
 		'template-03': 'Rspress'
 	};
+
+	const templates = [
+		{
+			id: 'template-00',
+			name: 'Starlight',
+			framework: 'Astro',
+			description: 'Astro 기반의 문서 사이트 프레임워크',
+			subdomain: 'replica-template-00',
+			repoUrl: 'https://github.com/XIYO/replica-template-00'
+		},
+		{
+			id: 'template-01',
+			name: 'VitePress',
+			framework: 'Vue',
+			description: 'Vue 기반의 정적 사이트 생성기',
+			subdomain: 'replica-template-01',
+			repoUrl: 'https://github.com/XIYO/replica-template-01'
+		},
+		{
+			id: 'template-02',
+			name: 'Docusaurus',
+			framework: 'React',
+			description: 'React 기반의 문서 사이트 프레임워크',
+			subdomain: 'replica-template-02',
+			repoUrl: 'https://github.com/XIYO/replica-template-02'
+		},
+		{
+			id: 'template-03',
+			name: 'Rspress',
+			framework: 'React',
+			description: 'Rust 기반 빌드 도구를 사용하는 빠른 문서 사이트',
+			subdomain: 'replica-template-03',
+			repoUrl: 'https://github.com/XIYO/replica-template-03'
+		}
+	];
 </script>
 
 {#snippet siteCard(site: DeployedSite)}
@@ -101,12 +136,8 @@
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-8 flex items-center justify-between">
 			<div>
-				<h1 class="text-3xl font-bold text-white">배포된 사이트</h1>
-				{#await data.sites}
-					<p class="mt-1 text-slate-400">불러오는 중...</p>
-				{:then sites}
-					<p class="mt-1 text-slate-400">총 {sites.length}개의 사이트</p>
-				{/await}
+				<h1 class="text-3xl font-bold text-white">사이트 목록</h1>
+				<p class="mt-1 text-slate-400">템플릿과 배포된 사이트를 확인하세요</p>
 			</div>
 			<a
 				href={resolve('/')}
@@ -115,6 +146,76 @@
 				+ 새 사이트 만들기
 			</a>
 		</div>
+
+		<!-- 템플릿 섹션 -->
+		<section class="mb-12">
+			<h2 class="mb-4 text-xl font-semibold text-white">템플릿</h2>
+			<div class="grid gap-4 sm:grid-cols-2">
+				{#each templates as template (template.id)}
+					<div
+						class="group relative overflow-hidden rounded-xl bg-slate-800/50 transition hover:bg-slate-800/70"
+					>
+						<a
+							href="https://{template.subdomain}.xiyo.dev"
+							target="_blank"
+							rel="external"
+							class="block"
+						>
+							<img
+								src="https://screenshots.xiyo.dev/{template.subdomain}.png"
+								alt="{template.name} 미리보기"
+								class="h-40 w-full object-cover object-top transition group-hover:scale-105"
+								loading="lazy"
+							/>
+						</a>
+						<div class="p-4">
+							<div class="flex items-center gap-2">
+								<h3 class="font-medium text-white">{template.name}</h3>
+								<span class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
+									{template.framework}
+								</span>
+							</div>
+							<p class="mt-1 text-sm text-slate-400">{template.description}</p>
+							<div class="mt-3 flex gap-2">
+								<a
+									href="https://{template.subdomain}.xiyo.dev"
+									target="_blank"
+									rel="external"
+									class="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white transition hover:bg-blue-500"
+								>
+									데모 보기
+								</a>
+								<a
+									href={template.repoUrl}
+									target="_blank"
+									rel="external"
+									class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition hover:bg-slate-600"
+								>
+									GitHub
+								</a>
+								<a
+									href={resolve(`/configure/${template.id}`)}
+									class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white transition hover:bg-emerald-500"
+								>
+									이 템플릿 사용
+								</a>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+		</section>
+
+		<!-- 배포된 사이트 섹션 -->
+		<section>
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-xl font-semibold text-white">배포된 사이트</h2>
+				{#await data.sites}
+					<span class="text-sm text-slate-400">불러오는 중...</span>
+				{:then sites}
+					<span class="text-sm text-slate-400">{sites.length}개</span>
+				{/await}
+			</div>
 
 		{#await data.sites}
 			<!-- Pending 상태: 스켈레톤 UI -->
@@ -167,5 +268,6 @@
 				</button>
 			</div>
 		{/await}
+		</section>
 	</div>
 </main>
