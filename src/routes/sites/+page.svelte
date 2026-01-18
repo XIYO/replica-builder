@@ -18,43 +18,13 @@
 	const templateNames: Record<string, string> = {
 		'template-00': 'Starlight',
 		'template-01': 'VitePress',
-		'template-02': 'Docusaurus',
-		'template-03': 'Rspress'
+		'template-02': 'Docusaurus'
 	};
 
 	const templates = [
-		{
-			id: 'template-00',
-			name: 'Starlight',
-			framework: 'Astro',
-			description: 'Astro 기반의 문서 사이트 프레임워크',
-			subdomain: 'replica-template-00',
-			repoUrl: 'https://github.com/XIYO/replica-template-00'
-		},
-		{
-			id: 'template-01',
-			name: 'VitePress',
-			framework: 'Vue',
-			description: 'Vue 기반의 정적 사이트 생성기',
-			subdomain: 'replica-template-01',
-			repoUrl: 'https://github.com/XIYO/replica-template-01'
-		},
-		{
-			id: 'template-02',
-			name: 'Docusaurus',
-			framework: 'React',
-			description: 'React 기반의 문서 사이트 프레임워크',
-			subdomain: 'replica-template-02',
-			repoUrl: 'https://github.com/XIYO/replica-template-02'
-		},
-		{
-			id: 'template-03',
-			name: 'Rspress',
-			framework: 'React',
-			description: 'Rust 기반 빌드 도구를 사용하는 빠른 문서 사이트',
-			subdomain: 'replica-template-03',
-			repoUrl: 'https://github.com/XIYO/replica-template-03'
-		}
+		{ id: 'template-00', name: 'Starlight', subdomain: 'replica-template-00' },
+		{ id: 'template-01', name: 'VitePress', subdomain: 'replica-template-01' },
+		{ id: 'template-02', name: 'Docusaurus', subdomain: 'replica-template-02' }
 	];
 </script>
 
@@ -150,58 +120,24 @@
 		<!-- 템플릿 섹션 -->
 		<section class="mb-12">
 			<h2 class="mb-4 text-xl font-semibold text-white">템플릿</h2>
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid gap-4 sm:grid-cols-3">
 				{#each templates as template (template.id)}
-					<div
-						class="group relative overflow-hidden rounded-xl bg-slate-800/50 transition hover:bg-slate-800/70"
+					<a
+						href="https://{template.subdomain}.xiyo.dev"
+						target="_blank"
+						rel="external"
+						class="group overflow-hidden rounded-xl bg-slate-800/50 transition hover:bg-slate-800/70"
 					>
-						<a
-							href="https://{template.subdomain}.xiyo.dev"
-							target="_blank"
-							rel="external"
-							class="block"
-						>
-							<img
-								src="https://screenshots.xiyo.dev/{template.subdomain}.png"
-								alt="{template.name} 미리보기"
-								class="h-40 w-full object-cover object-top transition group-hover:scale-105"
-								loading="lazy"
-							/>
-						</a>
-						<div class="p-4">
-							<div class="flex items-center gap-2">
-								<h3 class="font-medium text-white">{template.name}</h3>
-								<span class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
-									{template.framework}
-								</span>
-							</div>
-							<p class="mt-1 text-sm text-slate-400">{template.description}</p>
-							<div class="mt-3 flex gap-2">
-								<a
-									href="https://{template.subdomain}.xiyo.dev"
-									target="_blank"
-									rel="external"
-									class="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white transition hover:bg-blue-500"
-								>
-									데모 보기
-								</a>
-								<a
-									href={template.repoUrl}
-									target="_blank"
-									rel="external"
-									class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition hover:bg-slate-600"
-								>
-									GitHub
-								</a>
-								<a
-									href={resolve(`/configure/${template.id}`)}
-									class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white transition hover:bg-emerald-500"
-								>
-									이 템플릿 사용
-								</a>
-							</div>
+						<img
+							src="https://screenshots.xiyo.dev/{template.subdomain}.png"
+							alt={template.name}
+							class="h-32 w-full object-cover object-top transition group-hover:scale-105"
+							loading="lazy"
+						/>
+						<div class="p-3 text-center">
+							<span class="font-medium text-white">{template.name}</span>
 						</div>
-					</div>
+					</a>
 				{/each}
 			</div>
 		</section>
@@ -217,57 +153,57 @@
 				{/await}
 			</div>
 
-		{#await data.sites}
-			<!-- Pending 상태: 스켈레톤 UI -->
-			<div class="grid gap-4">
-				{#each Array(5) as _, i (i)}
-					<div class="flex animate-pulse items-start gap-4 rounded-xl bg-slate-800/50 p-5">
-						<div class="h-20 w-32 shrink-0 rounded-lg bg-slate-700"></div>
-						<div class="flex-1">
-							<div class="flex items-center gap-3">
-								<div class="h-6 w-40 rounded bg-slate-700"></div>
-								<div class="h-5 w-16 rounded bg-slate-700"></div>
-							</div>
-							<div class="mt-2 flex gap-3">
-								<div class="h-4 w-32 rounded bg-slate-700"></div>
-								<div class="h-4 w-48 rounded bg-slate-700"></div>
+			{#await data.sites}
+				<!-- Pending 상태: 스켈레톤 UI -->
+				<div class="grid gap-4">
+					{#each Array(5) as _, i (i)}
+						<div class="flex animate-pulse items-start gap-4 rounded-xl bg-slate-800/50 p-5">
+							<div class="h-20 w-32 shrink-0 rounded-lg bg-slate-700"></div>
+							<div class="flex-1">
+								<div class="flex items-center gap-3">
+									<div class="h-6 w-40 rounded bg-slate-700"></div>
+									<div class="h-5 w-16 rounded bg-slate-700"></div>
+								</div>
+								<div class="mt-2 flex gap-3">
+									<div class="h-4 w-32 rounded bg-slate-700"></div>
+									<div class="h-4 w-48 rounded bg-slate-700"></div>
+								</div>
 							</div>
 						</div>
-					</div>
-				{/each}
-			</div>
-		{:then sites}
-			<!-- 성공 상태 -->
-			{#if sites.length === 0}
-				<div class="rounded-xl bg-slate-800/50 p-12 text-center">
-					<p class="text-slate-400">배포된 사이트가 없습니다.</p>
-					<a
-						href={resolve('/')}
-						class="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-					>
-						첫 사이트 만들기
-					</a>
-				</div>
-			{:else}
-				<div class="grid gap-4">
-					{#each sites as site (site.repoName)}
-						{@render siteCard(site)}
 					{/each}
 				</div>
-			{/if}
-		{:catch error}
-			<!-- 에러 상태 -->
-			<div class="rounded-xl bg-red-900/30 p-6 text-center">
-				<p class="text-red-400">사이트 목록을 불러오는데 실패했습니다.</p>
-				<p class="mt-1 text-sm text-red-300">{error.message}</p>
-				<button
-					onclick={() => window.location.reload()}
-					class="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500"
-				>
-					다시 시도
-				</button>
-			</div>
-		{/await}
+			{:then sites}
+				<!-- 성공 상태 -->
+				{#if sites.length === 0}
+					<div class="rounded-xl bg-slate-800/50 p-12 text-center">
+						<p class="text-slate-400">배포된 사이트가 없습니다.</p>
+						<a
+							href={resolve('/')}
+							class="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+						>
+							첫 사이트 만들기
+						</a>
+					</div>
+				{:else}
+					<div class="grid gap-4">
+						{#each sites as site (site.repoName)}
+							{@render siteCard(site)}
+						{/each}
+					</div>
+				{/if}
+			{:catch error}
+				<!-- 에러 상태 -->
+				<div class="rounded-xl bg-red-900/30 p-6 text-center">
+					<p class="text-red-400">사이트 목록을 불러오는데 실패했습니다.</p>
+					<p class="mt-1 text-sm text-red-300">{error.message}</p>
+					<button
+						onclick={() => window.location.reload()}
+						class="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500"
+					>
+						다시 시도
+					</button>
+				</div>
+			{/await}
 		</section>
 	</div>
 </main>
