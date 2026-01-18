@@ -52,31 +52,69 @@ interface TranslatedStructure {
 	index: { title: string; tagline: string; description: string };
 }
 
-async function callGemini<T>(prompt: string): Promise<T> {
+async function callGemini<T>(prompt: string, retries = 3): Promise<T> {
 	const apiKey = Deno.env.get('GEMINI_API_KEY');
 	if (!apiKey) throw new Error('GEMINI_API_KEY not set');
 
-	const response = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ parts: [{ text: prompt }] }],
-				generationConfig: {
-					responseMimeType: 'application/json',
-					maxOutputTokens: 8192
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			const response = await fetch(
+				`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						contents: [{ parts: [{ text: prompt }] }],
+						generationConfig: {
+							responseMimeType: 'application/json',
+							maxOutputTokens: 8192
+						}
+					})
 				}
-			})
-		}
-	);
+			);
 
-	if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-	const data = await response.json();
-	if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Invalid API response');
-	const text = data.candidates[0].content.parts[0].text;
-	const parsed = JSON.parse(text);
-	return Array.isArray(parsed) ? parsed[0] : parsed;
+			if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+			const data = await response.json();
+			if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Invalid API response');
+
+			let text = data.candidates[0].content.parts[0].text.trim();
+
+			// Extract JSON object/array from response
+			const jsonStart = text.indexOf('{');
+			const jsonArrayStart = text.indexOf('[');
+			const startIndex = jsonArrayStart >= 0 && (jsonArrayStart < jsonStart || jsonStart < 0)
+				? jsonArrayStart : jsonStart;
+
+			if (startIndex > 0) text = text.substring(startIndex);
+
+			// Find matching closing bracket
+			let depth = 0;
+			let endIndex = -1;
+			const openChar = text[0];
+			const closeChar = openChar === '{' ? '}' : ']';
+
+			for (let i = 0; i < text.length; i++) {
+				if (text[i] === openChar) depth++;
+				else if (text[i] === closeChar) {
+					depth--;
+					if (depth === 0) {
+						endIndex = i + 1;
+						break;
+					}
+				}
+			}
+
+			if (endIndex > 0) text = text.substring(0, endIndex);
+
+			const parsed = JSON.parse(text);
+			return Array.isArray(parsed) ? parsed[0] : parsed;
+		} catch (error) {
+			if (attempt === retries) throw error;
+			console.log(`   Retry ${attempt}/${retries} due to: ${(error as Error).message}`);
+			await new Promise(r => setTimeout(r, 1000 * attempt));
+		}
+	}
+	throw new Error('Max retries exceeded');
 }
 
 async function generateStructure(topic: string): Promise<SiteStructure> {

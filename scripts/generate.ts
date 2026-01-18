@@ -61,46 +61,69 @@ interface TranslatedStructure {
 }
 
 // Gemini API call (always JSON mode)
-async function callGemini<T>(prompt: string): Promise<T> {
+async function callGemini<T>(prompt: string, retries = 3): Promise<T> {
 	const apiKey = Deno.env.get('GEMINI_API_KEY');
 	if (!apiKey) throw new Error('GEMINI_API_KEY not set');
 
-	const response = await fetch(
-		`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				contents: [{ parts: [{ text: prompt }] }],
-				generationConfig: {
-					responseMimeType: 'application/json',
-					maxOutputTokens: 8192
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			const response = await fetch(
+				`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						contents: [{ parts: [{ text: prompt }] }],
+						generationConfig: {
+							responseMimeType: 'application/json',
+							maxOutputTokens: 8192
+						}
+					})
 				}
-			})
+			);
+
+			if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+			const data = await response.json();
+			if (!data.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error('Invalid API response');
+
+			let text = data.candidates[0].content.parts[0].text.trim();
+
+			// Extract JSON object/array from response
+			const jsonStart = text.indexOf('{');
+			const jsonArrayStart = text.indexOf('[');
+			const startIndex = jsonArrayStart >= 0 && (jsonArrayStart < jsonStart || jsonStart < 0)
+				? jsonArrayStart : jsonStart;
+
+			if (startIndex > 0) text = text.substring(startIndex);
+
+			// Find matching closing bracket
+			let depth = 0;
+			let endIndex = -1;
+			const openChar = text[0];
+			const closeChar = openChar === '{' ? '}' : ']';
+
+			for (let i = 0; i < text.length; i++) {
+				if (text[i] === openChar) depth++;
+				else if (text[i] === closeChar) {
+					depth--;
+					if (depth === 0) {
+						endIndex = i + 1;
+						break;
+					}
+				}
+			}
+
+			if (endIndex > 0) text = text.substring(0, endIndex);
+
+			const parsed = JSON.parse(text);
+			return Array.isArray(parsed) ? parsed[0] : parsed;
+		} catch (error) {
+			if (attempt === retries) throw error;
+			console.log(`   Retry ${attempt}/${retries} due to: ${(error as Error).message}`);
+			await new Promise(r => setTimeout(r, 1000 * attempt));
 		}
-	);
-
-	if (!response.ok) {
-		throw new Error(`Gemini API error: ${response.status}`);
 	}
-
-	const data = await response.json();
-
-	if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-		console.error('Unexpected API response:', JSON.stringify(data, null, 2));
-		throw new Error('Invalid API response structure');
-	}
-
-	const text = data.candidates[0].content.parts[0].text;
-
-	try {
-		const parsed = JSON.parse(text);
-		return Array.isArray(parsed) ? parsed[0] : parsed;
-	} catch {
-		console.error('JSON parse error. Raw response:');
-		console.error(text.substring(0, 1000) + '...');
-		throw new Error('Failed to parse JSON response from Gemini');
-	}
+	throw new Error('Max retries exceeded');
 }
 
 // Convert DocContent to markdown string
