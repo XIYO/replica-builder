@@ -88,10 +88,15 @@
 				method="POST"
 				use:enhance={() => {
 					submitting = true;
-					return async ({ update }) => {
+					return async ({ result, update }) => {
 						await update();
 						submitting = false;
 						sessionStorage.removeItem('configFormData');
+
+						// 성공 시 status 페이지로 리다이렉트
+						if (result.type === 'success' && result.data?.subdomain) {
+							goto(resolve(`/status/${result.data.subdomain}`));
+						}
 					};
 				}}
 				class="space-y-6 rounded-xl bg-slate-800/50 p-8 shadow-xl"

@@ -64,6 +64,7 @@ export const actions = {
 
 		return {
 			success: true,
+			subdomain: config.subdomain as string,
 			deployUrl: `https://${config.subdomain}.xiyo.dev`
 		};
 	}

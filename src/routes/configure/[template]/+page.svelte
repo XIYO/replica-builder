@@ -9,6 +9,11 @@
 	// 폼 데이터 초기화 (기본값 적용)
 	let formData = $state<Record<string, string | boolean>>({});
 
+	// subdomain 검증 상태
+	let subdomainStatus = $state<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+	let subdomainError = $state<string>('');
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 	$effect(() => {
 		const initial: Record<string, string | boolean> = {};
 		for (const field of data.fields) {
@@ -18,6 +23,60 @@
 		}
 		formData = initial;
 	});
+
+	async function checkSubdomain(subdomain: string) {
+		if (!subdomain) {
+			subdomainStatus = 'idle';
+			subdomainError = '';
+			return;
+		}
+
+		// 형식 검증 (소문자, 숫자, 하이픈만)
+		if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(subdomain)) {
+			subdomainStatus = 'invalid';
+			subdomainError = '소문자, 숫자, 하이픈만 사용 가능합니다.';
+			return;
+		}
+
+		subdomainStatus = 'checking';
+		subdomainError = '';
+
+		try {
+			const res = await fetch(resolve(`/api/check-subdomain/${subdomain}`));
+			const result = (await res.json()) as {
+				available?: boolean;
+				error?: string;
+				message?: string;
+			};
+
+			if (!res.ok) {
+				subdomainStatus = 'invalid';
+				subdomainError = result.message || '검증 중 오류 발생';
+				return;
+			}
+
+			if (result.available) {
+				subdomainStatus = 'available';
+				subdomainError = '';
+			} else {
+				subdomainStatus = 'taken';
+				subdomainError = result.error || '이미 사용 중인 주소입니다.';
+			}
+		} catch {
+			subdomainStatus = 'invalid';
+			subdomainError = '네트워크 오류';
+		}
+	}
+
+	function handleSubdomainInput(value: string) {
+		const subdomain = value.toLowerCase();
+		formData['subdomain'] = subdomain;
+
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => checkSubdomain(subdomain), 500);
+	}
+
+	const canSubmit = $derived(subdomainStatus !== 'taken' && subdomainStatus !== 'checking');
 
 	// 샘플 토픽
 	const sampleTopics = [
@@ -97,16 +156,32 @@
 										<input
 											type="text"
 											id={field.name}
-											bind:value={formData[field.name]}
+											value={formData[field.name] || ''}
+											oninput={(e) => handleSubdomainInput(e.currentTarget.value)}
 											placeholder={field.placeholder}
 											pattern={field.validation?.pattern}
-											class="block w-full rounded-l-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500"
+											class="block w-full rounded-l-md border-0 bg-slate-700 px-3 py-2 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 {subdomainStatus ===
+												'taken' || subdomainStatus === 'invalid'
+												? 'ring-2 ring-red-500'
+												: ''} {subdomainStatus === 'available' ? 'ring-2 ring-green-500' : ''}"
 										/>
 										<span
 											class="inline-flex items-center rounded-r-md bg-slate-600 px-3 text-sm text-slate-300"
 										>
 											.xiyo.dev
 										</span>
+									</div>
+									<!-- 검증 상태 표시 -->
+									<div class="mt-1.5 flex items-center gap-1.5 text-xs">
+										{#if subdomainStatus === 'checking'}
+											<span class="text-slate-400">확인 중...</span>
+										{:else if subdomainStatus === 'available'}
+											<span class="text-green-400">✓ 사용 가능한 주소입니다.</span>
+										{:else if subdomainStatus === 'taken'}
+											<span class="text-red-400">✗ {subdomainError}</span>
+										{:else if subdomainStatus === 'invalid'}
+											<span class="text-red-400">✗ {subdomainError}</span>
+										{/if}
 									</div>
 								{:else}
 									<input
@@ -175,9 +250,14 @@
 
 				<button
 					type="submit"
-					class="mt-6 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500"
+					disabled={!canSubmit}
+					class="mt-6 w-full cursor-pointer rounded-md bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					다음 단계로
+					{#if subdomainStatus === 'checking'}
+						주소 확인 중...
+					{:else}
+						다음 단계로
+					{/if}
 				</button>
 			</form>
 		</div>

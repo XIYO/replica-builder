@@ -1,0 +1,78 @@
+name: Capture Site Screenshot
+description: "Playwright로 사이트 스크린샷을 캡처하고 Cloudflare R2에 업로드합니다"
+
+inputs:
+  site-url:
+    description: "스크린샷을 캡처할 사이트 URL"
+    required: true
+  subdomain:
+    description: "파일명으로 사용할 서브도메인"
+    required: true
+  r2-bucket-name:
+    description: "R2 버킷 이름"
+    required: true
+  cloudflare-account-id:
+    description: "Cloudflare Account ID"
+    required: true
+  cloudflare-r2-token:
+    description: "R2 write 권한이 있는 API 토큰"
+    required: true
+
+outputs:
+  screenshot-url:
+    description: "업로드된 스크린샷 URL"
+    value: ${{ steps.upload.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Install Playwright
+      shell: bash
+      run: npx playwright install chromium --with-deps
+
+    - name: Capture screenshot
+      shell: bash
+      env:
+        SITE_URL: ${{ inputs.site-url }}
+        SUBDOMAIN: ${{ inputs.subdomain }}
+      run: |
+        set -e
+
+        # 사이트 로드 대기 후 스크린샷 캡처
+        npx playwright screenshot \
+          --viewport-size=1280,720 \
+          --wait-for-timeout=3000 \
+          "$SITE_URL" \
+          "/tmp/${SUBDOMAIN}.png"
+
+        echo "Screenshot captured: /tmp/${SUBDOMAIN}.png"
+        ls -la "/tmp/${SUBDOMAIN}.png"
+
+    - name: Upload to R2
+      id: upload
+      shell: bash
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare-account-id }}
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare-r2-token }}
+        BUCKET_NAME: ${{ inputs.r2-bucket-name }}
+        SUBDOMAIN: ${{ inputs.subdomain }}
+      run: |
+        set -e
+
+        # wrangler 설치
+        npm install -g wrangler
+
+        # R2에 업로드
+        wrangler r2 object put "${BUCKET_NAME}/${SUBDOMAIN}.png" \
+          --file="/tmp/${SUBDOMAIN}.png" \
+          --content-type="image/png"
+
+        # 출력 URL 설정 (Custom Domain 사용 시)
+        SCREENSHOT_URL="https://screenshots.xiyo.dev/${SUBDOMAIN}.png"
+        echo "url=${SCREENSHOT_URL}" >> "$GITHUB_OUTPUT"
+        echo "::notice::Screenshot uploaded: ${SCREENSHOT_URL}"

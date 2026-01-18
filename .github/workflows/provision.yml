@@ -71,6 +71,9 @@ jobs:
           gh secret set CLOUDFLARE_ZONE_ID \
             --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
             --body "${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          gh secret set CLOUDFLARE_R2_TOKEN \
+            --repo ${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }} \
+            --body "${{ secrets.CLOUDFLARE_R2_TOKEN }}"
 
       - name: Set GitHub Variables on forked repo
         env:
