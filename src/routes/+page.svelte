@@ -25,7 +25,7 @@
 		<p class="mb-8 max-w-2xl text-lg text-slate-400 sm:text-xl">
 			주제만 입력하면 AI가 전문적인 문서 사이트를 자동으로 생성합니다.
 			<br class="hidden sm:block" />
-			Starlight, VitePress, Docusaurus, Rspress 템플릿을 지원합니다.
+			Starlight, VitePress, Docusaurus 템플릿을 지원합니다.
 		</p>
 
 		<!-- 히어로 버튼 -->
@@ -80,7 +80,7 @@
 						</svg>
 					</div>
 					<h3 class="mb-2 text-lg font-semibold text-white">다양한 템플릿</h3>
-					<p class="text-sm text-slate-400">Starlight, VitePress, Docusaurus, Rspress 중 원하는 프레임워크를 선택하세요.</p>
+					<p class="text-sm text-slate-400">Starlight, VitePress, Docusaurus 중 원하는 프레임워크를 선택하세요.</p>
 				</div>
 
 				<div class="rounded-xl bg-slate-800/50 p-6">
