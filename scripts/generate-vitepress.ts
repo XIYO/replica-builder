@@ -213,7 +213,7 @@ features:
     details: ${features[1].details}
 ---
 `;
-	return { path: `docs/${LOCALE.code}/index.md`, content };
+	return { path: `docs/index.md`, content };
 }
 
 function generateVitePressConfig(structure: SiteStructure): string {
@@ -221,7 +221,7 @@ function generateVitePressConfig(structure: SiteStructure): string {
 		text: c.label,
 		items: c.docs.map((d) => ({
 			text: d.title,
-			link: `/${LOCALE.code}/${c.name}/${d.slug}`
+			link: `/${c.name}/${d.slug}`
 		}))
 	}));
 
@@ -235,6 +235,7 @@ export default defineConfig({
   title: siteConfig.title,
   description: siteConfig.description,
   lastUpdated: siteConfig.lastUpdated,
+  lang: '${LOCALE.lang}',
 
   sitemap: {
     hostname: siteUrl
@@ -250,17 +251,8 @@ export default defineConfig({
     \`]
   ],
 
-  locales: {
-    '${LOCALE.code}': {
-      label: '${LOCALE.label}',
-      lang: '${LOCALE.lang}',
-      themeConfig: {
-        sidebar: ${JSON.stringify(sidebar, null, 8).replace(/^/gm, '        ').trim()}
-      }
-    }
-  },
-
   themeConfig: {
+    sidebar: ${JSON.stringify(sidebar, null, 4).replace(/^/gm, '    ').trim()},
     socialLinks: [
       { icon: 'github', link: \`https://github.com/\${siteConfig.githubRepo}\` }
     ]
@@ -302,7 +294,7 @@ async function main() {
 			const content = await generateDocument(category, doc);
 			const md = `# ${content.frontmatter.title}\n\n${content.frontmatter.description}\n\n${content.content.replace(/\\n/g, '\n')}`;
 			allDocs.push({
-				path: `docs/${LOCALE.code}/${category.name}/${doc.slug}.md`,
+				path: `docs/${category.name}/${doc.slug}.md`,
 				content: md
 			});
 			console.log(`   - Generated: ${doc.title}`);
