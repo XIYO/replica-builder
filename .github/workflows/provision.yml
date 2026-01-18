@@ -109,7 +109,7 @@ jobs:
           cat > site/site.config.json << 'EOF'
           ${{ inputs.config }}
           EOF
-          jq '. + {"githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}"}' \
+          jq '. + {"githubRepo": "${{ env.GITHUB_OWNER }}/${{ steps.fork.outputs.fork_name }}", "locale": "ko"}' \
             site/site.config.json > site/site.config.json.tmp
           mv site/site.config.json.tmp site/site.config.json
 
