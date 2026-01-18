@@ -188,26 +188,6 @@ jobs:
           deno run --allow-net --allow-write --allow-env --allow-read \
             ../builder/scripts/generate-docusaurus.ts "${{ steps.config.outputs.topic }}"
 
-      # Rspress (template-03) 전용 단계들
-      - name: Setup Deno (Rspress)
-        if: steps.config.outputs.template == 'replica-template-03'
-        uses: denoland/setup-deno@v2
-
-      - name: Remove default content (Rspress)
-        if: steps.config.outputs.template == 'replica-template-03'
-        run: |
-          rm -rf site/docs/guide
-          rm -f site/docs/index.md
-
-      - name: Generate initial content with AI (Rspress)
-        if: steps.config.outputs.template == 'replica-template-03'
-        working-directory: site
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          deno run --allow-net --allow-write --allow-env --allow-read \
-            ../builder/scripts/generate-rspress.ts "${{ steps.config.outputs.topic }}"
-
       - name: Commit and push changes
         working-directory: site
         run: |
