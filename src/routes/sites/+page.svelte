@@ -110,7 +110,7 @@
 				<p class="mt-1 text-slate-400">템플릿과 배포된 사이트를 확인하세요</p>
 			</div>
 			<a
-				href={resolve('/')}
+				href={resolve('/new')}
 				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
 			>
 				+ 새 사이트 만들기
@@ -178,7 +178,7 @@
 					<div class="rounded-xl bg-slate-800/50 p-12 text-center">
 						<p class="text-slate-400">배포된 사이트가 없습니다.</p>
 						<a
-							href={resolve('/')}
+							href={resolve('/new')}
 							class="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
 						>
 							첫 사이트 만들기
