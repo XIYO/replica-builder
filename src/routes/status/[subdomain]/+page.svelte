@@ -15,11 +15,14 @@
 	let jobs = $state<WorkflowJob[]>([]);
 	let deployUrl = $state<string | null>(null);
 	let eventSource: EventSource | null = null;
+	let reconnectAttempts = 0;
+	const maxReconnectAttempts = 10;
 
-	onMount(() => {
+	function connect() {
 		eventSource = new EventSource(resolve(`/api/workflow-status/${data.subdomain}`));
 
 		eventSource.onmessage = (event) => {
+			reconnectAttempts = 0; // 성공적으로 메시지를 받으면 재시도 횟수 초기화
 			const eventData = JSON.parse(event.data) as WorkflowStatusEvent;
 
 			switch (eventData.type) {
@@ -54,12 +57,23 @@
 		};
 
 		eventSource.onerror = () => {
-			if (status !== 'completed') {
-				status = 'error';
-				message = '연결이 끊어졌습니다.';
-			}
 			eventSource?.close();
+			// 완료되지 않았으면 자동 재연결 시도
+			if (status !== 'completed' && status !== 'error') {
+				reconnectAttempts++;
+				if (reconnectAttempts <= maxReconnectAttempts) {
+					message = `재연결 중... (${reconnectAttempts}/${maxReconnectAttempts})`;
+					setTimeout(connect, 2000); // 2초 후 재연결
+				} else {
+					status = 'error';
+					message = '연결이 끊어졌습니다. 새로고침해주세요.';
+				}
+			}
 		};
+	}
+
+	onMount(() => {
+		connect();
 	});
 
 	onDestroy(() => {
