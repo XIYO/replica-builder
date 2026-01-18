@@ -365,13 +365,22 @@ features:
 	return { path: `docs/${locale}/index.md`, content };
 }
 
-function generateVitePressConfig(structure: SiteStructure): string {
+function generateVitePressConfig(
+	structure: SiteStructure,
+	translatedStructures: Map<string, TranslatedStructure>
+): string {
 	const localesConfig: string[] = [];
 
 	for (const locale of LOCALES) {
-		const sidebar = structure.categories.map((c) => ({
-			text: c.label,
-			items: c.docs.map((d) => ({ text: d.title, link: `/${locale.code}/${c.name}/${d.slug}` }))
+		const isKorean = locale.code === DEFAULT_LOCALE;
+		const translated = translatedStructures.get(locale.code);
+
+		const sidebar = structure.categories.map((c, catIdx) => ({
+			text: isKorean ? c.label : translated!.categories[catIdx].label,
+			items: c.docs.map((d, docIdx) => ({
+				text: isKorean ? d.title : translated!.categories[catIdx].docs[docIdx].title,
+				link: `/${locale.code}/${c.name}/${d.slug}`
+			}))
 		}));
 
 		localesConfig.push(`    '${locale.code}': {
@@ -461,8 +470,17 @@ async function main() {
 	// Step 3: Generate all language versions
 	console.log('3. Generating translations...');
 	const allDocs: GeneratedDoc[] = [];
+	const translatedStructures = new Map<string, TranslatedStructure>();
 
-	// Korean version
+	// Korean version (store as identity for config generation)
+	translatedStructures.set(DEFAULT_LOCALE, {
+		categories: structure.categories.map(c => ({
+			label: c.label,
+			docs: c.docs.map(d => ({ title: d.title, description: d.description }))
+		})),
+		index: structure.index
+	});
+
 	allDocs.push(generateIndexPage(structure, null, DEFAULT_LOCALE));
 	for (const { category, docInfo, content } of koreanDocs) {
 		const md = `# ${content.frontmatter.title}\n\n${content.frontmatter.description}\n\n${content.content.replace(/\\n/g, '\n')}`;
@@ -478,6 +496,7 @@ async function main() {
 
 		console.log(`   - Translating to ${locale.label}...`);
 		const translatedStructure = await translateStructure(structure, locale.code);
+		translatedStructures.set(locale.code, translatedStructure);
 
 		allDocs.push(generateIndexPage(structure, translatedStructure, locale.code));
 
@@ -504,7 +523,7 @@ async function main() {
 
 	// Step 4: Write files
 	console.log('4. Writing files...');
-	const configContent = generateVitePressConfig(structure);
+	const configContent = generateVitePressConfig(structure, translatedStructures);
 	await writeFiles(allDocs, configContent);
 
 	console.log(`\nUpdate site.config.json with:`);
