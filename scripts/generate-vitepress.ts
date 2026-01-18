@@ -1,7 +1,18 @@
 /**
  * Deno script for generating VitePress documentation content using Gemini API
+ * with multi-language support (ko, zh, ja, en)
  * Usage: deno run --allow-net --allow-write --allow-env --allow-read generate-vitepress.ts "주제"
  */
+
+// Language configuration
+const LOCALES = [
+	{ code: 'ko', label: '한국어', lang: 'ko-KR' },
+	{ code: 'zh', label: '简体中文', lang: 'zh-CN' },
+	{ code: 'ja', label: '日本語', lang: 'ja-JP' },
+	{ code: 'en', label: 'English', lang: 'en-US' }
+] as const;
+
+const DEFAULT_LOCALE = 'ko';
 
 interface DocInfo {
 	slug: string;
@@ -36,6 +47,11 @@ interface DocContent {
 interface GeneratedDoc {
 	path: string;
 	content: string;
+}
+
+interface TranslatedStructure {
+	categories: { label: string; docs: { title: string; description: string }[] }[];
+	index: { title: string; tagline: string; description: string };
 }
 
 async function callGemini<T>(prompt: string): Promise<T> {
@@ -102,7 +118,59 @@ async function generateStructure(topic: string): Promise<SiteStructure> {
 	return await callGemini<SiteStructure>(prompt);
 }
 
-async function generateDocument(structure: SiteStructure, category: Category, doc: DocInfo): Promise<GeneratedDoc> {
+async function translateStructure(
+	structure: SiteStructure,
+	targetLang: string
+): Promise<TranslatedStructure> {
+	const langNames: Record<string, string> = {
+		zh: '简体中文',
+		ja: '日本語',
+		en: 'English'
+	};
+
+	const prompt = `다음 한국어 문서 구조를 ${langNames[targetLang]}로 번역하세요.
+
+원본 (한국어):
+${JSON.stringify(
+		{
+			categories: structure.categories.map((c) => ({
+				label: c.label,
+				docs: c.docs.map((d) => ({ title: d.title, description: d.description }))
+			})),
+			index: structure.index
+		},
+		null,
+		2
+	)}
+
+다음 JSON 형식으로 응답하세요:
+{
+  "categories": [
+    {
+      "label": "string - 번역된 카테고리 라벨",
+      "docs": [
+        {
+          "title": "string - 번역된 문서 제목",
+          "description": "string - 번역된 문서 설명"
+        }
+      ]
+    }
+  ],
+  "index": {
+    "title": "string - 번역된 사이트 제목",
+    "tagline": "string - 번역된 한 줄 소개",
+    "description": "string - 번역된 사이트 설명"
+  }
+}
+
+요구사항:
+- 자연스러운 ${langNames[targetLang]} 번역
+- 기술 용어는 해당 언어에서 일반적으로 사용되는 표현 사용`;
+
+	return await callGemini<TranslatedStructure>(prompt);
+}
+
+async function generateDocument(category: Category, doc: DocInfo): Promise<DocContent> {
 	const prompt = `당신은 기술 문서 작성자입니다. 다음 문서를 작성하세요.
 
 ## 작성할 문서
@@ -140,29 +208,110 @@ async function generateDocument(structure: SiteStructure, category: Category, do
 - 마크다운 헤더(##, ###), 리스트(-, 1.), 코드블록(\`\`\`) 적극 활용
 - 실용적인 예제 포함`;
 
-	const result = await callGemini<DocContent>(prompt);
-	const md = `# ${result.frontmatter.title}\n\n${result.frontmatter.description}\n\n${result.content}`;
-	return { path: `docs/${category.name}/${doc.slug}.md`, content: md };
+	return await callGemini<DocContent>(prompt);
 }
 
-async function generateIndexPage(structure: SiteStructure): Promise<GeneratedDoc> {
-	const firstDoc = `/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}`;
+async function translateDocument(doc: DocContent, targetLang: string): Promise<DocContent> {
+	const langNames: Record<string, string> = {
+		zh: '简体中文',
+		ja: '日本語',
+		en: 'English'
+	};
 
-	const features = structure.categories.map(c => ({
-		title: c.label,
-		details: c.docs.map(d => d.title).join(', ')
-	}));
+	const prompt = `다음 한국어 기술 문서를 ${langNames[targetLang]}로 번역하세요.
+
+원본 (한국어):
+${JSON.stringify(doc, null, 2)}
+
+다음 JSON 형식으로 응답하세요:
+{
+  "frontmatter": {
+    "title": "번역된 제목",
+    "description": "번역된 설명"
+  },
+  "content": "번역된 마크다운 본문"
+}
+
+## Few-shot 예시
+
+입력 (한국어):
+{
+  "frontmatter": {
+    "title": "변수와 타입",
+    "description": "JavaScript의 변수 선언 방법을 알아봅니다."
+  },
+  "content": "## 변수 선언\\n\\n변수를 선언하는 방법입니다.\\n\\n- **let**: 재할당 가능\\n- **const**: 재할당 불가"
+}
+
+출력 (${langNames[targetLang]}):
+${
+	targetLang === 'en'
+		? `{
+  "frontmatter": {
+    "title": "Variables and Types",
+    "description": "Learn how to declare variables in JavaScript."
+  },
+  "content": "## Variable Declaration\\n\\nHere's how to declare variables.\\n\\n- **let**: Can be reassigned\\n- **const**: Cannot be reassigned"
+}`
+		: targetLang === 'zh'
+			? `{
+  "frontmatter": {
+    "title": "变量与类型",
+    "description": "了解JavaScript中的变量声明方法。"
+  },
+  "content": "## 变量声明\\n\\n以下是声明变量的方法。\\n\\n- **let**: 可重新赋值\\n- **const**: 不可重新赋值"
+}`
+			: `{
+  "frontmatter": {
+    "title": "変数と型",
+    "description": "JavaScriptでの変数宣言方法を学びます。"
+  },
+  "content": "## 変数宣言\\n\\n変数を宣言する方法です。\\n\\n- **let**: 再代入可能\\n- **const**: 再代入不可"
+}`
+}
+
+요구사항:
+- 자연스러운 ${langNames[targetLang]} 번역
+- 마크다운 구조 유지 (##, ###, -, \`\`\` 등)
+- 코드 블록 내용은 번역하지 않음 (주석만 번역)`;
+
+	return await callGemini<DocContent>(prompt);
+}
+
+function generateIndexPage(
+	structure: SiteStructure,
+	translatedStructure: TranslatedStructure | null,
+	locale: string
+): GeneratedDoc {
+	const isKorean = locale === DEFAULT_LOCALE;
+	const idx = isKorean ? structure.index : translatedStructure!.index;
+	const firstDoc = `/${locale}/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}`;
+
+	const actionText: Record<string, string> = {
+		ko: '시작하기',
+		zh: '开始使用',
+		ja: '始める',
+		en: 'Get Started'
+	};
+
+	const features = structure.categories.map((c, i) => {
+		const label = isKorean ? c.label : translatedStructure!.categories[i].label;
+		const details = isKorean
+			? c.docs.map((d) => d.title).join(', ')
+			: translatedStructure!.categories[i].docs.map((d) => d.title).join(', ');
+		return { title: label, details };
+	});
 
 	const content = `---
 layout: home
 
 hero:
-  name: "${structure.index.title}"
-  text: "${structure.index.tagline}"
-  tagline: "${structure.index.description}"
+  name: "${idx.title}"
+  text: "${idx.tagline}"
+  tagline: "${idx.description}"
   actions:
     - theme: brand
-      text: 시작하기
+      text: ${actionText[locale]}
       link: ${firstDoc}
     - theme: alt
       text: GitHub
@@ -175,14 +324,26 @@ features:
     details: ${features[1].details}
 ---
 `;
-	return { path: 'docs/index.md', content };
+	return { path: `docs/${locale}/index.md`, content };
 }
 
 function generateVitePressConfig(structure: SiteStructure): string {
-	const sidebar = structure.categories.map(c => ({
-		text: c.label,
-		items: c.docs.map(d => ({ text: d.title, link: `/${c.name}/${d.slug}` }))
-	}));
+	const localesConfig: string[] = [];
+
+	for (const locale of LOCALES) {
+		const sidebar = structure.categories.map((c) => ({
+			text: c.label,
+			items: c.docs.map((d) => ({ text: d.title, link: `/${locale.code}/${c.name}/${d.slug}` }))
+		}));
+
+		localesConfig.push(`    '${locale.code}': {
+      label: '${locale.label}',
+      lang: '${locale.lang}',
+      themeConfig: {
+        sidebar: ${JSON.stringify(sidebar, null, 8).replace(/^/gm, '        ').trim()}
+      }
+    }`);
+	}
 
 	return `import { defineConfig } from 'vitepress'
 import { readFileSync } from 'fs'
@@ -193,7 +354,6 @@ const siteUrl = \`https://\${siteConfig.subdomain}.xiyo.dev\`
 export default defineConfig({
   title: siteConfig.title,
   description: siteConfig.description,
-  lang: siteConfig.locale,
   lastUpdated: siteConfig.lastUpdated,
 
   sitemap: {
@@ -210,12 +370,14 @@ export default defineConfig({
     \`]
   ],
 
+  locales: {
+${localesConfig.join(',\n')}
+  },
+
   themeConfig: {
     socialLinks: [
       { icon: 'github', link: \`https://github.com/\${siteConfig.githubRepo}\` }
-    ],
-
-    sidebar: ${JSON.stringify(sidebar, null, 6).replace(/^/gm, '    ').trim()}
+    ]
   }
 })
 `;
@@ -239,33 +401,82 @@ async function main() {
 		Deno.exit(1);
 	}
 
-	console.log(`\nGenerating VitePress docs for: "${topic}"\n`);
+	console.log(`\nGenerating multi-language VitePress docs for: "${topic}"\n`);
+	console.log(`Languages: ${LOCALES.map((l) => l.label).join(', ')}\n`);
 
+	// Step 1: Generate structure (Korean)
 	console.log('1. Generating structure...');
 	const structure = await generateStructure(topic);
 
-	console.log('2. Generating documents...');
-	const tasks: Promise<GeneratedDoc>[] = [generateIndexPage(structure)];
-	for (const cat of structure.categories) {
-		for (const doc of cat.docs) {
-			tasks.push(generateDocument(structure, cat, doc));
+	// Step 2: Generate Korean documents
+	console.log('2. Generating Korean documents...');
+	const koreanDocs: { category: Category; docInfo: DocInfo; content: DocContent }[] = [];
+
+	for (const category of structure.categories) {
+		for (const doc of category.docs) {
+			const content = await generateDocument(category, doc);
+			koreanDocs.push({ category, docInfo: doc, content });
+			console.log(`   - Generated: ${doc.title}`);
 		}
 	}
-	const docs = await Promise.all(tasks);
 
-	console.log('3. Writing files...');
+	// Step 3: Generate all language versions
+	console.log('3. Generating translations...');
+	const allDocs: GeneratedDoc[] = [];
+
+	// Korean version
+	allDocs.push(generateIndexPage(structure, null, DEFAULT_LOCALE));
+	for (const { category, docInfo, content } of koreanDocs) {
+		const md = `# ${content.frontmatter.title}\n\n${content.frontmatter.description}\n\n${content.content.replace(/\\n/g, '\n')}`;
+		allDocs.push({
+			path: `docs/${DEFAULT_LOCALE}/${category.name}/${docInfo.slug}.md`,
+			content: md
+		});
+	}
+
+	// Other languages
+	for (const locale of LOCALES) {
+		if (locale.code === DEFAULT_LOCALE) continue;
+
+		console.log(`   - Translating to ${locale.label}...`);
+		const translatedStructure = await translateStructure(structure, locale.code);
+
+		allDocs.push(generateIndexPage(structure, translatedStructure, locale.code));
+
+		for (let i = 0; i < koreanDocs.length; i++) {
+			const { category, docInfo, content } = koreanDocs[i];
+			const translatedContent = await translateDocument(content, locale.code);
+
+			const catIndex = structure.categories.findIndex((c) => c.name === category.name);
+			const docIndex = category.docs.findIndex((d) => d.slug === docInfo.slug);
+			if (catIndex >= 0 && docIndex >= 0) {
+				translatedContent.frontmatter.title =
+					translatedStructure.categories[catIndex].docs[docIndex].title;
+				translatedContent.frontmatter.description =
+					translatedStructure.categories[catIndex].docs[docIndex].description;
+			}
+
+			const md = `# ${translatedContent.frontmatter.title}\n\n${translatedContent.frontmatter.description}\n\n${translatedContent.content.replace(/\\n/g, '\n')}`;
+			allDocs.push({
+				path: `docs/${locale.code}/${category.name}/${docInfo.slug}.md`,
+				content: md
+			});
+		}
+	}
+
+	// Step 4: Write files
+	console.log('4. Writing files...');
 	const configContent = generateVitePressConfig(structure);
-	await writeFiles(docs, configContent);
+	await writeFiles(allDocs, configContent);
 
-	// Output site config update suggestion
 	console.log(`\nUpdate site.config.json with:`);
 	console.log(`  "title": "${structure.index.title}"`);
 	console.log(`  "description": "${structure.index.description}"`);
 
-	console.log('\nDone!');
+	console.log(`\nDone! Generated ${allDocs.length} documents in ${LOCALES.length} languages.`);
 }
 
-main().catch(err => {
+main().catch((err) => {
 	console.error('Error:', err.message);
 	Deno.exit(1);
 });
