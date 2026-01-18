@@ -184,7 +184,7 @@ async function generateDocument(category: Category, doc: DocInfo): Promise<DocCo
 }
 
 function generateIndexPage(structure: SiteStructure): GeneratedDoc {
-	const firstDoc = `/${LOCALE.code}/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}`;
+	const firstDoc = `/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}`;
 
 	const features = structure.categories.map((c) => ({
 		title: c.label,
