@@ -43,7 +43,7 @@
 						<!-- 스크린샷 썸네일 -->
 						<div class="hidden shrink-0 sm:block">
 							<img
-								src="https://screenshots.xiyo.dev/replica-{template.id}.png"
+								src="https://screenshots.xiyo.dev/{template.id}.png"
 								alt="{template.name} 미리보기"
 								class="h-20 w-32 rounded-lg border border-slate-700 object-cover object-top"
 								loading="lazy"
