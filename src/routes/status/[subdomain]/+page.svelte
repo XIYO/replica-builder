@@ -2,82 +2,57 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
-	import type { WorkflowStatusEvent } from '../../api/workflow-status/[subdomain]/+server';
+	import type { WorkflowStatusResponse } from '../../api/workflow-status/[subdomain]/+server';
 	import type { WorkflowJob, WorkflowRun } from '$lib/github';
 
 	const { data }: { data: PageData } = $props();
 
-	let status = $state<'connecting' | 'searching' | 'progress' | 'completed' | 'error'>(
-		'connecting'
-	);
-	let message = $state('연결 중...');
+	let status = $state<'searching' | 'progress' | 'completed' | 'error'>('searching');
+	let message = $state('워크플로우를 검색하고 있습니다...');
 	let run = $state<WorkflowRun | null>(null);
 	let jobs = $state<WorkflowJob[]>([]);
 	let deployUrl = $state<string | null>(null);
-	let eventSource: EventSource | null = null;
-	let reconnectAttempts = 0;
-	const maxReconnectAttempts = 10;
+	let intervalId: ReturnType<typeof setInterval> | null = null;
 
-	function connect() {
-		eventSource = new EventSource(resolve(`/api/workflow-status/${data.subdomain}`));
+	async function fetchStatus() {
+		try {
+			const response = await fetch(resolve(`/api/workflow-status/${data.subdomain}`));
+			if (!response.ok) throw new Error('API 오류');
 
-		eventSource.onmessage = (event) => {
-			reconnectAttempts = 0; // 성공적으로 메시지를 받으면 재시도 횟수 초기화
-			const eventData = JSON.parse(event.data) as WorkflowStatusEvent;
+			const result = (await response.json()) as WorkflowStatusResponse;
 
-			switch (eventData.type) {
-				case 'searching':
-					status = 'searching';
-					message = eventData.message || '워크플로우를 검색하고 있습니다...';
-					break;
-				case 'found':
-					status = 'progress';
-					message = eventData.message || '워크플로우를 찾았습니다.';
-					if (eventData.run) run = eventData.run;
-					break;
-				case 'progress':
-					status = 'progress';
-					if (eventData.run) run = eventData.run;
-					if (eventData.jobs) jobs = eventData.jobs;
-					break;
-				case 'completed':
-					status = 'completed';
-					message = eventData.message || '완료';
-					if (eventData.run) run = eventData.run;
-					if (eventData.jobs) jobs = eventData.jobs;
-					if (eventData.deployUrl) deployUrl = eventData.deployUrl;
-					eventSource?.close();
-					break;
-				case 'error':
-					status = 'error';
-					message = eventData.message || '오류가 발생했습니다.';
-					eventSource?.close();
-					break;
-			}
-		};
+			status = result.status;
+			if (result.message) message = result.message;
+			if (result.run) run = result.run;
+			if (result.jobs) jobs = result.jobs;
+			if (result.deployUrl) deployUrl = result.deployUrl;
 
-		eventSource.onerror = () => {
-			eventSource?.close();
-			// 완료되지 않았으면 자동 재연결 시도
-			if (status !== 'completed' && status !== 'error') {
-				reconnectAttempts++;
-				if (reconnectAttempts <= maxReconnectAttempts) {
-					message = `재연결 중... (${reconnectAttempts}/${maxReconnectAttempts})`;
-					setTimeout(connect, 2000); // 2초 후 재연결
-				} else {
-					status = 'error';
-					message = '연결이 끊어졌습니다. 새로고침해주세요.';
+			// 완료되면 폴링 중지
+			if (status === 'completed' || status === 'error') {
+				if (intervalId) {
+					clearInterval(intervalId);
+					intervalId = null;
 				}
 			}
-		};
+		} catch {
+			status = 'error';
+			message = '상태를 가져올 수 없습니다.';
+			if (intervalId) {
+				clearInterval(intervalId);
+				intervalId = null;
+			}
+		}
 	}
 
 	onMount(() => {
-		connect();
+		// 즉시 한 번 실행
+		fetchStatus();
+		// 10초마다 폴링
+		intervalId = setInterval(fetchStatus, 10000);
 	});
 
 	onDestroy(() => {
-		eventSource?.close();
+		if (intervalId) clearInterval(intervalId);
 	});
 
 	function getStepIcon(stepStatus: string, conclusion: string | null) {
@@ -126,7 +101,7 @@
 		<div class="rounded-xl bg-slate-800/50 p-6 shadow-xl">
 			<!-- 상태 헤더 -->
 			<div class="mb-6 flex items-center gap-3">
-				{#if status === 'connecting' || status === 'searching'}
+				{#if status === 'searching'}
 					<div
 						class="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"
 					></div>
