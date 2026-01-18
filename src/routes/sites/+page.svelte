@@ -29,52 +29,20 @@
 </script>
 
 {#snippet siteCard(site: DeployedSite)}
-	<div
-		class="group flex items-start gap-4 rounded-xl bg-slate-800/50 p-5 transition hover:bg-slate-800/70"
+	<a
+		href={site.url}
+		target="_blank"
+		rel="external"
+		class="rounded-xl bg-slate-800/50 p-4 transition hover:bg-slate-700/50"
 	>
-		<div class="flex flex-1 flex-col justify-between">
-			<div>
-				<div class="flex items-center gap-3">
-					<a
-						href={site.url}
-						target="_blank"
-						rel="external"
-						class="text-lg font-medium text-white hover:text-blue-400"
-					>
-						{site.subdomain}<span class="text-slate-500">.xiyo.dev</span>
-					</a>
-					<span class="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
-						{templateNames[site.template] || site.template}
-					</span>
-				</div>
-				<div class="mt-1 flex items-center gap-3 text-sm text-slate-500">
-					<span>{formatDate(site.createdAt)}</span>
-					<a href={site.repoUrl} target="_blank" rel="external" class="hover:text-slate-300">
-						{site.repoName}
-					</a>
-				</div>
-			</div>
-
-			<div class="mt-2 flex items-center gap-2 opacity-0 transition group-hover:opacity-100">
-				<a
-					href={site.url}
-					target="_blank"
-					rel="external"
-					class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition hover:bg-slate-600"
-				>
-					방문
-				</a>
-				<a
-					href={site.repoUrl}
-					target="_blank"
-					rel="external"
-					class="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white transition hover:bg-slate-600"
-				>
-					GitHub
-				</a>
-			</div>
+		<div class="flex items-center justify-between gap-2">
+			<span class="truncate font-medium text-white">{site.subdomain}</span>
+			<span class="shrink-0 rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300">
+				{templateNames[site.template] || site.template}
+			</span>
 		</div>
-	</div>
+		<div class="mt-1 text-xs text-slate-500">{formatDate(site.createdAt)}</div>
+	</a>
 {/snippet}
 
 <svelte:head>
@@ -126,19 +94,14 @@
 
 			{#await data.sites}
 				<!-- Pending 상태: 스켈레톤 UI -->
-				<div class="grid gap-4">
-					{#each Array(5) as _, i (i)}
-						<div class="flex animate-pulse items-start gap-4 rounded-xl bg-slate-800/50 p-5">
-							<div class="flex-1">
-								<div class="flex items-center gap-3">
-									<div class="h-6 w-40 rounded bg-slate-700"></div>
-									<div class="h-5 w-16 rounded bg-slate-700"></div>
-								</div>
-								<div class="mt-2 flex gap-3">
-									<div class="h-4 w-32 rounded bg-slate-700"></div>
-									<div class="h-4 w-48 rounded bg-slate-700"></div>
-								</div>
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{#each Array(6) as _, i (i)}
+						<div class="animate-pulse rounded-xl bg-slate-800/50 p-4">
+							<div class="flex items-center justify-between gap-2">
+								<div class="h-5 w-32 rounded bg-slate-700"></div>
+								<div class="h-5 w-16 rounded bg-slate-700"></div>
 							</div>
+							<div class="mt-2 h-3 w-24 rounded bg-slate-700"></div>
 						</div>
 					{/each}
 				</div>
@@ -155,7 +118,7 @@
 						</a>
 					</div>
 				{:else}
-					<div class="grid gap-4">
+					<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 						{#each sites as site (site.repoName)}
 							{@render siteCard(site)}
 						{/each}
