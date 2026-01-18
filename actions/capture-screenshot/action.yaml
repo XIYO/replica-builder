@@ -67,10 +67,11 @@ runs:
         # wrangler 설치
         npm install -g wrangler
 
-        # R2에 업로드
+        # R2에 업로드 (--remote 필수)
         wrangler r2 object put "${BUCKET_NAME}/${SUBDOMAIN}.png" \
           --file="/tmp/${SUBDOMAIN}.png" \
-          --content-type="image/png"
+          --content-type="image/png" \
+          --remote
 
         # 출력 URL 설정 (Custom Domain 사용 시)
         SCREENSHOT_URL="https://screenshots.xiyo.dev/${SUBDOMAIN}.png"
