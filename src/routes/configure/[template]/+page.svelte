@@ -6,6 +6,16 @@
 
 	const { data }: { data: PageData } = $props();
 
+	// 표시할 필드 목록 (순서대로)
+	const visibleFields = ['subdomain', 'title', 'topic', 'accentColor'];
+
+	// 필터링된 필드
+	const filteredFields = $derived(
+		visibleFields
+			.map((name) => data.fields.find((f) => f.name === name))
+			.filter((f) => f !== undefined)
+	);
+
 	// 폼 데이터 초기화 (기본값 적용)
 	let formData = $state<Record<string, string | boolean>>({});
 
@@ -21,6 +31,8 @@
 				initial[field.name] = field.default;
 			}
 		}
+		// 언어는 항상 한국어로 고정
+		initial['locale'] = 'ko';
 		formData = initial;
 	});
 
@@ -126,7 +138,7 @@
 						>
 					</p>
 				</div>
-				<a href={resolve('/')} class="text-sm text-slate-400 hover:text-white">← 템플릿 변경</a>
+				<a href={resolve('/new')} class="text-sm text-slate-400 hover:text-white">← 템플릿 변경</a>
 			</div>
 
 			<form
@@ -136,14 +148,11 @@
 				}}
 				class="space-y-5"
 			>
-				{#each data.fields as field (field.name)}
-					{#if !['array', 'image'].includes(field.type)}
+				{#each filteredFields as field (field.name)}
+					{#if field && !['array', 'image'].includes(field.type)}
 						<div>
 							<label for={field.name} class="block text-sm font-medium text-slate-200">
 								{field.label}
-								{#if !field.required}
-									<span class="text-slate-500">(선택)</span>
-								{/if}
 							</label>
 
 							{#if field.description}

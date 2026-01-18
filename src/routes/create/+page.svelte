@@ -67,7 +67,7 @@
 				</div>
 				<p class="mt-4 text-xs text-green-300">배포 완료까지 약 2-3분 소요됩니다.</p>
 				<a
-					href={resolve('/')}
+					href={resolve('/new')}
 					class="mt-4 inline-block rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500"
 				>
 					새 사이트 만들기
@@ -166,7 +166,7 @@
 			<div class="rounded-xl bg-slate-800/50 p-8 text-center">
 				<p class="text-slate-400">설정 데이터가 없습니다. 처음부터 시작해주세요.</p>
 				<a
-					href={resolve('/')}
+					href={resolve('/new')}
 					class="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
 				>
 					템플릿 선택으로
