@@ -239,7 +239,7 @@ async function generateIndexPage(structure: SiteStructure): Promise<DocContent> 
 		.map((c) => `- ${c.label}: ${c.docs.map((d) => d.title).join(', ')}`)
 		.join('\n');
 
-	const firstDoc = `/${LOCALE.code}/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}/`;
+	const firstDoc = `/${structure.categories[0].name}/${structure.categories[0].docs[0].slug}/`;
 
 	const prompt = `당신은 기술 문서 작성자입니다. 문서 사이트의 메인 페이지를 작성하세요.
 
@@ -297,9 +297,9 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: siteConfig.title,
-			defaultLocale: '${LOCALE.code}',
+			defaultLocale: 'root',
 			locales: {
-				'${LOCALE.code}': { label: '${LOCALE.label}', lang: '${LOCALE.lang}' }
+				root: { label: '${LOCALE.label}', lang: '${LOCALE.lang}' }
 			},
 			customCss: ['./src/styles/custom.css'],
 			social: [
@@ -354,7 +354,7 @@ async function main() {
 	// Generate index page
 	const indexPage = await generateIndexPage(structure);
 	allDocs.push({
-		path: `src/content/docs/${LOCALE.code}/index.mdx`,
+		path: `src/content/docs/index.mdx`,
 		content: toMarkdown(indexPage)
 	});
 
@@ -363,7 +363,7 @@ async function main() {
 		for (const doc of category.docs) {
 			const content = await generateDocument(structure, category, doc);
 			allDocs.push({
-				path: `src/content/docs/${LOCALE.code}/${category.name}/${doc.slug}.md`,
+				path: `src/content/docs/${category.name}/${doc.slug}.md`,
 				content: toMarkdown(content)
 			});
 			console.log(`   - Generated: ${doc.title}`);
