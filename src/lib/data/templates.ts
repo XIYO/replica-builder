@@ -31,14 +31,6 @@ export const templates: Template[] = [
 		description: 'Docusaurus 기반 문서 사이트',
 		preview: 'https://replica-template-02.xiyo.dev',
 		schemaUrl: 'https://raw.githubusercontent.com/XIYO/replica-template-02/main/config.schema.yaml'
-	},
-	{
-		id: 'replica-template-03',
-		name: 'Rspress',
-		framework: 'React',
-		description: 'Rspress 기반 문서 사이트',
-		preview: 'https://replica-template-03.xiyo.dev',
-		schemaUrl: 'https://raw.githubusercontent.com/XIYO/replica-template-03/main/config.schema.yaml'
 	}
 ];
 
