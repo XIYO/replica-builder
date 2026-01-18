@@ -32,27 +32,6 @@
 	<div
 		class="group flex items-start gap-4 rounded-xl bg-slate-800/50 p-5 transition hover:bg-slate-800/70"
 	>
-		<!-- 썸네일 이미지 -->
-		<a href={site.url} target="_blank" rel="external" class="shrink-0">
-			<img
-				src="https://screenshots.xiyo.dev/{site.subdomain}.png"
-				alt="{site.subdomain} 미리보기"
-				class="h-20 w-32 rounded-lg border border-slate-700 bg-slate-900 object-cover transition group-hover:border-slate-600"
-				loading="lazy"
-				onerror={(e) => {
-					const img = e.currentTarget as HTMLImageElement;
-					img.style.display = 'none';
-					const fallback = img.nextElementSibling as HTMLElement;
-					if (fallback) fallback.style.display = 'flex';
-				}}
-			/>
-			<div
-				class="hidden h-20 w-32 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-xs text-slate-500"
-			>
-				미리보기 없음
-			</div>
-		</a>
-
 		<div class="flex flex-1 flex-col justify-between">
 			<div>
 				<div class="flex items-center gap-3">
@@ -126,17 +105,9 @@
 						href="https://{template.subdomain}.xiyo.dev"
 						target="_blank"
 						rel="external"
-						class="group overflow-hidden rounded-xl bg-slate-800/50 transition hover:bg-slate-800/70"
+						class="group rounded-xl bg-slate-800/50 p-4 text-center transition hover:bg-slate-800/70"
 					>
-						<img
-							src="https://screenshots.xiyo.dev/{template.subdomain}.png"
-							alt={template.name}
-							class="h-32 w-full object-cover object-top transition group-hover:scale-105"
-							loading="lazy"
-						/>
-						<div class="p-3 text-center">
-							<span class="font-medium text-white">{template.name}</span>
-						</div>
+						<span class="font-medium text-white">{template.name}</span>
 					</a>
 				{/each}
 			</div>
@@ -158,7 +129,6 @@
 				<div class="grid gap-4">
 					{#each Array(5) as _, i (i)}
 						<div class="flex animate-pulse items-start gap-4 rounded-xl bg-slate-800/50 p-5">
-							<div class="h-20 w-32 shrink-0 rounded-lg bg-slate-700"></div>
 							<div class="flex-1">
 								<div class="flex items-center gap-3">
 									<div class="h-6 w-40 rounded bg-slate-700"></div>
