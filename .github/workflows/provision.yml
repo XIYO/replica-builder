@@ -133,8 +133,9 @@ jobs:
       - name: Remove default content (Starlight)
         if: steps.config.outputs.template == 'replica-template-00'
         run: |
-          rm -rf site/src/content/docs/guides
-          rm -rf site/src/content/docs/reference
+          rm -rf site/src/content/docs/core-technologies
+          rm -rf site/src/content/docs/future-outlook
+          rm -rf site/src/content/docs/overview
           rm -f site/src/content/docs/index.mdx
 
       - name: Generate initial content with AI (Starlight)
@@ -154,8 +155,9 @@ jobs:
       - name: Remove default content (VitePress)
         if: steps.config.outputs.template == 'replica-template-01'
         run: |
-          rm -rf site/docs/guide
-          rm -rf site/docs/reference
+          rm -rf site/docs/core-technologies
+          rm -rf site/docs/future-outlook
+          rm -rf site/docs/overview
           rm -f site/docs/index.md
 
       - name: Generate initial content with AI (VitePress)
@@ -175,9 +177,10 @@ jobs:
       - name: Remove default content (Docusaurus)
         if: steps.config.outputs.template == 'replica-template-02'
         run: |
-          rm -rf site/docs/tutorial-basics
-          rm -rf site/docs/tutorial-extras
-          rm -f site/docs/intro.md
+          rm -rf site/docs/core-technologies
+          rm -rf site/docs/future-outlook
+          rm -rf site/docs/overview
+          rm -f site/docs/index.md
 
       - name: Generate initial content with AI (Docusaurus)
         if: steps.config.outputs.template == 'replica-template-02'
